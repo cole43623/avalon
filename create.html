@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avalon</title>
+  <!-- Font gotico da Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
+  <!-- Includi Supabase via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: url('https://i.imgur.com/GsDyBrC.jpg') no-repeat center center fixed;
+      background-size: cover;
+      font-family: 'MedievalSharp', cursive;
+      color: #f0e6d2;
+      text-shadow: 2px 2px 4px #000;
+    }
+
+    .container {
+      text-align: center;
+      background-color: rgba(20, 10, 0, 0.7);
+      padding: 50px 80px;
+      border: 3px solid #a67c52;
+      border-radius: 15px;
+      box-shadow: 0 0 20px #000;
+    }
+
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 30px;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      font-size: 1.2rem;
+      border-radius: 5px;
+      border: 2px solid #a67c52;
+      margin-bottom: 20px;
+      width: 80%;
+      max-width: 300px;
+      text-align: center;
+    }
+
+    .button {
+      display: inline-block;
+      margin: 10px;
+      padding: 15px 40px;
+      font-size: 1.5rem;
+      color: #f0e6d2;
+      background-color: #6b3e26;
+      border: 2px solid #a67c52;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+    }
+
+    .button:hover {
+      background-color: #8b5a2b;
+      box-shadow: 0 0 15px #fff;
+      transform: scale(1.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Inserisci Nick</h1>
+    <input type="text" id="nickname" placeholder="Il tuo nickname">
+    <br>
+    <button class="button" id="conferma">Conferma</button>
+  </div>
+
+  <script>
+    const confermaButton = document.getElementById('conferma');
+
+    // Inizializza Supabase
+    const supabaseUrl = 'https://ctnkeyycsbhadytnglbj.supabase.co';
+    const supabaseKey = 'sb_publishable_CEVeeu7p1k-MvdqxIoOZtA_J_M_I79b';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    // Funzione per generare numero casuale a 5 cifre
+    function randomFiveDigits() {
+      return Math.floor(10000 + Math.random() * 90000).toString();
+    }
+	
+async function createRoomAndPlayer(nickname, roomCode) {
+    try {
+        // Inserisci il room_code nella tabella rooms_id
+        const { error: roomError } = await supabase
+            .from('rooms_id')
+            .insert([{ room_code: roomCode }]);
+
+        if (roomError) throw roomError;
+
+        // Inserisci il giocatore nella tabella players
+        const { error: playerError } = await supabase
+            .from('players')
+            .insert([{ 
+                room: roomCode, 
+                name: nickname, 
+                role: null, 
+                status: null 
+            }]);
+
+        if (playerError) throw playerError;
+
+        console.log(`Room ${roomCode} creata con successo`);
+        return true;
+        
+    } catch (error) {
+        console.error('Errore nella creazione della room:', error);
+        return false;
+    }
+}
+	
+async function checkRoomExists(roomCode) {
+    const { data, error } = await supabase
+        .from('rooms_id')
+        .select('room_code')
+        .eq('room_code', roomCode)
+        .limit(1);
+
+    if (error) {
+        console.error('Errore controllo room:', error);
+        return false; // In caso di errore, considera come esistente per riprovare
+    }
+    return data && data.length > 0;
+}
+	
+    // Funzione principale
+async function createRoomId(nickname) {
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    while (attempts < maxAttempts) {
+        const roomCode = randomFiveDigits();
+        attempts++;
+
+        try {
+            const roomExists = await checkRoomExists(roomCode);
+            
+            if (!roomExists) {
+                await createRoomAndPlayer(nickname, roomCode);
+                return roomCode; // Restituisci il room code creato
+            }
+        } catch (error) {
+            console.error('Errore durante la creazione della room:', error);
+        }
+    }
+    
+    console.error('Impossibile generare un nome tabella unico dopo', maxAttempts, 'tentativi');
+    return null;
+}
+
+    confermaButton.addEventListener('click', function() {
+      const nickname = document.getElementById('nickname').value.trim();
+
+      if(nickname !== "") {
+        createRoomId(nickname).then(roomCode => {
+          if (roomCode) {
+            //alert('Gioco creato con successo! Codice: ' + roomCode);
+            window.location.replace("waiting_players.html?roomCode=" + roomCode);
+          } else { 
+            //alert('Errore nella creazione del gioco. Riprova.');
+          }
+        });
+      } 
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avalon</title>
+  <!-- Font gotico da Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
+  <!-- Includi Supabase via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: url('https://i.imgur.com/GsDyBrC.jpg') no-repeat center center fixed;
+      background-size: cover;
+      font-family: 'MedievalSharp', cursive;
+      color: #f0e6d2;
+      text-shadow: 2px 2px 4px #000;
+    }
+
+    .container {
+      text-align: center;
+      background-color: rgba(20, 10, 0, 0.7);
+      padding: 50px 80px;
+      border: 3px solid #a67c52;
+      border-radius: 15px;
+      box-shadow: 0 0 20px #000;
+    }
+
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 30px;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      font-size: 1.2rem;
+      border-radius: 5px;
+      border: 2px solid #a67c52;
+      margin-bottom: 20px;
+      width: 80%;
+      max-width: 300px;
+      text-align: center;
+    }
+
+    .button {
+      display: inline-block;
+      margin: 10px;
+      padding: 15px 40px;
+      font-size: 1.5rem;
+      color: #f0e6d2;
+      background-color: #6b3e26;
+      border: 2px solid #a67c52;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+    }
+
+    .button:hover {
+      background-color: #8b5a2b;
+      box-shadow: 0 0 15px #fff;
+      transform: scale(1.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1></h1>
+
+        <ul id="playerList" style="list-style: none; padding: 0; margin: 0;">
+        </ul>
+    <br>
+    <h2>Aspettando l'host</h2>
+  </div>
+
+<script>
+  const confermaButton = document.getElementById('conferma');
+  const playerList = document.getElementById('playerList');
+  
+  const supabaseUrl = 'https://ctnkeyycsbhadytnglbj.supabase.co';
+  const supabaseKey = 'sb_publishable_CEVeeu7p1k-MvdqxIoOZtA_J_M_I79b';
+  const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+  const params = new URLSearchParams(window.location.search);
+  const roomCode = params.get('roomCode');
+
+  const title = document.querySelector('h1');
+  if (roomCode) {
+    title.textContent = 'Sala di Avalon: ' + roomCode;
+  } else {
+    title.textContent = 'Sala di Avalon';
+  }
+
+  // Funzione per aggiornare la lista dei giocatori
+  async function updatePlayers() {
+    if (!roomCode) return;
+
+    const { data, error } = await supabase
+      .from('players')
+      .select('*')
+      .eq('room', roomCode);
+
+    if (error) {
+      console.error('Errore nel recupero dei giocatori:', error);
+      return;
+    }
+
+    // Svuota la lista
+    playerList.innerHTML = '';
+
+    // Ricrea la lista con i nuovi dati
+    data.forEach(player => {
+      const li = document.createElement('li');
+      li.textContent = player.name;
+      li.style.fontSize = '1.8rem';
+      li.style.padding = '8px';
+      li.style.margin = '5px 0';
+      li.style.backgroundColor = 'rgba(107, 62, 38, 0.5)';
+      li.style.borderRadius = '5px';
+      playerList.appendChild(li);
+    });
+  }
+
+  // Esegui subito la prima volta
+  updatePlayers();
+
+  // Esegui ogni secondo
+  setInterval(updatePlayers, 1000);
+</script>
+
+
+</body>
+</html>
