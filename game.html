@@ -199,7 +199,8 @@ async function setStatusTrue(roomCode, nickname) {
       .update({ status: 'true' })    // aggiorna status
       .eq('room', roomCode)          // filtra per room
       .eq('name', nickname)          // filtra per nickname
-      .limit(1);                     // opzionale: assicura massimo un record
+      .limit(1)                     // opzionale: assicura massimo un record
+      .select();
 
     if (error) throw error;
 
