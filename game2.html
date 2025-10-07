@@ -150,7 +150,8 @@ async function getPlayersByRoom() {
     const { data, error } = await supabase
       .from('players')
       .select('name, role')
-      .eq('room', roomCode);
+      .eq('room', roomCode)
+      .order('name');
 
     if (error) {
       console.error('Errore nella query:', error);
@@ -200,7 +201,7 @@ async function setStatusVoted(roomCode, nickname, res) {
       .from('players')
       .update({ status: res })       // aggiorna lo status
       .eq('room', roomCode)                 // filtra per stanza
-      .in('name', nickname)           // filtra per i giocatori selezionati
+      .eq('name', nickname)           // filtra per il giocatore selezionato
       .select();
 
     if (error) throw error;
@@ -249,7 +250,14 @@ async function checkPlayersStatus2() {
   }
 }
 
-
+(async () => {
+    try {
+        const reset = await setStatusVoted(roomCode, nickname, 'true');
+        console.log('Reset completato:', reset);
+    } catch (error) {
+        console.error('Errore nel reset:', error);
+    }
+})();
 
 function voteMission() {
   const playerList = document.getElementById('playerList');
@@ -310,13 +318,16 @@ function voteMission() {
     confirmVoteBtn.remove();
     const success2 = await setStatusVoted(roomCode, nickname, selectedVote);
     const interval2 = setInterval(async () => {
+		console.log("test");
         const result = await checkPlayersStatus2();
         if (result) {
-            clearInterval(interval);
+            clearInterval(interval2);
             if (result == 1)
               console.log("votato si");
             else
-            console.log("votato no");
+			{
+              window.location.reload();
+			}
         } 
     }, 1000);
   });

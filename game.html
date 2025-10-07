@@ -68,6 +68,21 @@
       transform: scale(1.1);
     }
 
+.button:disabled {
+  background-color: #3e1f10; /* colore più scuro */
+  border-color: #5a3e2b;
+  color: #999; /* testo più spento */
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Disabilita l'hover quando il bottone è disabilitato */
+.button:disabled:hover {
+  background-color: #3e1f10; /* stesso colore di default per disabled */
+  box-shadow: none;
+  transform: none;
+}
 
   </style>
 </head>

@@ -219,8 +219,8 @@ async function setRoles(roomCode) {
 
 confermaButton.addEventListener('click', async function() {
 
-    const updated = await setStatusTrue(roomCode);
     const updated2 = await setRoles(roomCode);
+    const updated = await setStatusTrue(roomCode);
     if (updated && updated2) {
       window.location.replace("game.html?roomCode=" + roomCode + "&player=" + nickname);
     } else {
