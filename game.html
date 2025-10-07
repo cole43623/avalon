@@ -75,7 +75,6 @@
   <div class="container">
     <h1></h1>
     <h2></h2>
-
     <br>
     <button class="button" id="conferma" >Conferma</button>
   </div>
@@ -117,9 +116,9 @@ async function getPlayersByRoom() {
   }
 }
 
-function getNamesByRole(roleName, roleName2) {
+function getNamesByRole(roleName1, roleName2) {
   return playersData
-    .filter(p => p.role === roleName || p => p.role === roleName2)
+    .filter(p => p.role === roleName1 || p.role === roleName2)
     .map(p => p.name);
 }
 
@@ -158,113 +157,70 @@ getPlayersByRoom().then(players => {
 	const listShuffle = [...list].sort(() => Math.random() - 0.5);
 	title2.textContent = "Gli altri cattivi sono " + listShuffle;
   }
+    else if (role == "buono")
+  {
+	title2.textContent = "GG vinci.";
+  }
 });
 
 
+async function checkPlayersStatus() {
+  if (!roomCode) return;
 
-  // Funzione per aggiornare la lista dei giocatori
-  async function updatePlayers() {
-    if (!roomCode) return;
-
+  try {
     const { data, error } = await supabase
       .from('players')
-      .select('*')
+      .select('status')
       .eq('room', roomCode);
 
     if (error) {
       console.error('Errore nel recupero dei giocatori:', error);
       return;
     }
-	confermaButton.disabled = data.length < 2;
-    // Svuota la lista
-    playerList.innerHTML = '';
 
-    // Ricrea la lista con i nuovi dati
-    data.forEach(player => {
-      const li = document.createElement('li');
-      li.textContent = player.name;
-      li.style.fontSize = '1.8rem';
-      li.style.padding = '8px';
-      li.style.margin = '5px 0';
-      li.style.backgroundColor = 'rgba(107, 62, 38, 0.5)';
-      li.style.borderRadius = '5px';
-      playerList.appendChild(li);
-    });
+    const allTrue = data.every(player => player.status === 'true');
+
+    if (allTrue) {
+      window.location.replace("game2.html?roomCode=" + roomCode + "&player=" + nickname);
+    }
+  } catch (err) {
+    console.error('Errore nella funzione checkPlayersStatus:', err);
   }
-
-  //updatePlayers();
- // setInterval(updatePlayers, 1000);
+}
 
 
-async function setStatusTrue(roomCode) {
+  setInterval(checkPlayersStatus, 1000);
+
+
+async function setStatusTrue(roomCode, nickname) {
   try {
     const { data, error } = await supabase
-      .from('rooms_id')
-      .update({ status: true })   // imposta a TRUE (booleano)
-      .eq('room_code', roomCode)  // filtra per codice stanza
-      .select();                  // opzionale: restituisce la riga aggiornata
+      .from('players')
+      .update({ status: 'true' })    // aggiorna status
+      .eq('room', roomCode)          // filtra per room
+      .eq('name', nickname)          // filtra per nickname
+      .limit(1);                     // opzionale: assicura massimo un record
 
     if (error) throw error;
 
-    console.log("Status aggiornato a TRUE per la stanza:", roomCode);
-    return roomCode;  // restituisce il codice stanza per l’uso nel redirect
+    if (data.length === 0) {
+      console.log("Nessun player trovato con quel roomCode e nickname");
+      return false;
+    }
+
+    console.log("Status aggiornato a TRUE per il player:", nickname);
+    return true;
   } catch (err) {
     console.error("Errore aggiornando lo status:", err);
     return null;
   }
 }
 
-async function setRoles(roomCode) {
-    const ruoli = ["Merlino", "Percival", "Morgana", "Mordred", "buono", "buono", "cattivo", "buono", "buono"];
-
-    // Recupero giocatori dalla stanza
-    const { data: players, error } = await supabase
-        .from('players')
-        .select('*')
-        .eq('room', roomCode);
-
-    if (error) {
-        console.error('Errore nel recupero dei giocatori:', error);
-        return null;
-    }
-
-    // Prendi solo tanti ruoli quanti sono i giocatori
-    const ruoliPerGiocatori = ruoli.slice(0, players.length);
-    // Mischia i ruoli
-    const ruoliShuffle = [...ruoliPerGiocatori].sort(() => Math.random() - 0.5);
-
-    try {
-        // Aggiorna ogni giocatore con il ruolo corrispondente
-        for (let i = 0; i < players.length; i++) {
-            const playerId = players[i].id;
-            const ruolo = ruoliShuffle[i];
-
-            const { error: updateError } = await supabase
-                .from('players')
-                .update({ role: ruolo })
-                .eq('id', playerId);
-
-            if (updateError) {
-                throw updateError;
-            }
-        }
-
-        console.log("Status ruoli aggiornati");
-        return true;
-    } catch (err) {
-        console.error("Errore aggiornando lo status:", err);
-        return null;
-    }
-}
-
 
 confermaButton.addEventListener('click', async function() {
 
     const updated = await setStatusTrue(roomCode);
-    const updated2 = await setRoles(roomCode);
-    if (updated && updated2) {
-      window.location.replace("game.html?roomCode=" + roomCode + "&player=" + nickname);
-    } else {
+    if (!updated){
       alert("Errore nell'aggiornamento dello stato della stanza.");
     }
 
