@@ -76,7 +76,7 @@
     <h1></h1>
     <h2></h2>
     <br>
-    <button class="button" id="conferma" >Conferma</button>
+    <button class="button" id="conferma" >Ho capito!</button>
   </div>
 
 <script>
@@ -189,7 +189,7 @@ async function checkPlayersStatus() {
 }
 
 
-  setInterval(checkPlayersStatus, 1000);
+
 
 
 async function setStatusTrue(roomCode, nickname) {
@@ -210,6 +210,8 @@ async function setStatusTrue(roomCode, nickname) {
     }
 
     console.log("Status aggiornato a TRUE per il player:", nickname);
+	setInterval(checkPlayersStatus, 1000);
+	confermaButton.disabled = true;
     return true;
   } catch (err) {
     console.error("Errore aggiornando lo status:", err);
