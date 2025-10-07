@@ -194,6 +194,54 @@ async function checkPlayersStatus() {
   }
 }
 
+async function setStatusVoted(roomCode, nickname, res) {
+  try {
+    const { data, error } = await supabase
+      .from('players')
+      .update({ status: res })       // aggiorna lo status
+      .eq('room', roomCode)                 // filtra per stanza
+      .in('name', nickname)           // filtra per i giocatori selezionati
+      .select();
+
+    if (error) throw error;
+
+    if (!data || data.length != 1) {
+      console.log("Nessun player trovato con quel roomCode e nomi corrispondenti");
+      return false;
+    }
+
+    console.log("Status aggiornato a 'selected' per i giocatori:", missionPlayers);
+    return true;
+  } catch (err) {
+    console.error("Errore aggiornando lo status:", err);
+    return null;
+  }
+}
+
+async function checkPlayersStatus2() {
+  if (!roomCode) return 0;
+
+  try {
+    const { data, error } = await supabase
+      .from('players')
+      .select('name')
+      .eq('status', 'rejct o accept')
+      .eq('room', roomCode);
+
+    if (error) {
+      console.error('Errore nel recupero dei giocatori:', error);
+      return 0;
+    }
+
+    missionPlayers = data.map(p => p.name);
+
+    return missionPlayers.length;
+  } catch (err) {
+    console.error('Errore nella funzione checkPlayersStatus:', err);
+    return 0;
+  }
+}
+
 function voteMission() {
   const playerList = document.getElementById('playerList');
   playerList.innerHTML = '';
@@ -251,6 +299,8 @@ function voteMission() {
     confirmVoteBtn.disabled = true;
     confirmVoteBtn.textContent = "Voto inviato!";
     confirmVoteBtn.remove();
+    const success2 = await setStatusVoted(roomCode, nickname, selectedVote);
+    checkPlayersStatus2();
   });
 }
 
