@@ -119,8 +119,9 @@ async function createPlayer(nickname, roomCode) {
 async function checkRoomExists(roomCode) {
     const { data, error } = await supabase
         .from('rooms_id')
-        .select('room_code')
+        .select('room_code, status')
         .eq('room_code', roomCode)
+        .eq('status', false)
         .limit(1);
 
     if (error) {
@@ -140,9 +141,9 @@ async function checkRoomExists(roomCode) {
                 return roomid; // Restituisci il room code creato
             }
         } catch (error) {
-            console.error('Errore durante la creazione della room:', error);
+            console.error('Errore la stanza non esiste:', error);
         }
-    console.error('Impossibile generare un nome tabella unico dopo', maxAttempts, 'tentativi');
+    console.error('Impossibile trovare la stanza: ', roomid);
     return null;
 }
 

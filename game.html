@@ -220,7 +220,7 @@ async function setStatusTrue(roomCode, nickname) {
 
 confermaButton.addEventListener('click', async function() {
 
-    const updated = await setStatusTrue(roomCode);
+    const updated = await setStatusTrue(roomCode, nickname);
     if (!updated){
       alert("Errore nell'aggiornamento dello stato della stanza.");
     }
