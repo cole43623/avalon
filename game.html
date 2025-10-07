@@ -67,33 +67,17 @@
       box-shadow: 0 0 15px #fff;
       transform: scale(1.1);
     }
-	
-.button:disabled {
-  background-color: #3e1f10; /* colore più scuro */
-  border-color: #5a3e2b;
-  color: #999; /* testo più spento */
-  cursor: not-allowed;
-  box-shadow: none;
-  transform: none;
-}
 
-/* Disabilita l'hover quando il bottone è disabilitato */
-.button:disabled:hover {
-  background-color: #3e1f10; /* stesso colore di default per disabled */
-  box-shadow: none;
-  transform: none;
-}
 
   </style>
 </head>
 <body>
   <div class="container">
     <h1></h1>
+    <h2></h2>
 
-        <ul id="playerList" style="list-style: none; padding: 0; margin: 0;">
-        </ul>
     <br>
-    <button class="button" id="conferma" disabled>Conferma</button>
+    <button class="button" id="conferma" >Conferma</button>
   </div>
 
 <script>
@@ -104,7 +88,6 @@ document.addEventListener('keydown', function(e) {
         confermaButton.click(); // Simula il click sul bottone
     }
 });
-  const playerList = document.getElementById('playerList');
   
   const supabaseUrl = 'https://ctnkeyycsbhadytnglbj.supabase.co';
   const supabaseKey = 'sb_publishable_CEVeeu7p1k-MvdqxIoOZtA_J_M_I79b';
@@ -113,13 +96,71 @@ document.addEventListener('keydown', function(e) {
   const params = new URLSearchParams(window.location.search);
   const roomCode = params.get('roomCode');
   const nickname = params.get('player');
+let playersData = [];
 
-  const title = document.querySelector('h1');
-  if (roomCode) {
-    title.textContent = 'Sala di Avalon: ' + roomCode;
-  } else {
-    title.textContent = 'Sala di Avalon';
+async function getPlayersByRoom() {
+  try {
+    const { data, error } = await supabase
+      .from('players')
+      .select('name, role')
+      .eq('room', roomCode);
+
+    if (error) {
+      console.error('Errore nella query:', error);
+      playersData = []; // reset globale in caso di errore
+    } else {
+      playersData = data; // assegna a variabile globale
+    }
+  } catch (err) {
+    console.error('Errore:', err);
+    playersData = []; // reset globale in caso di eccezione
   }
+}
+
+function getNamesByRole(roleName, roleName2) {
+  return playersData
+    .filter(p => p.role === roleName || p => p.role === roleName2)
+    .map(p => p.name);
+}
+
+getPlayersByRoom().then(players => {
+  const role = playersData.find(p => p.name === nickname)?.role;
+  const title = document.querySelector('h1');
+  title.textContent = nickname + " sei " + role;
+  const title2 = document.querySelector('h2');
+  if (role == "Merlino")
+  {
+	const list = getNamesByRole("Morgana","cattivo")
+	const listShuffle = [...list].sort(() => Math.random() - 0.5);
+	title2.textContent = "Morgana e i cattivi sono " + listShuffle;
+  }
+  else if (role == "Percival")
+  {
+	const list = getNamesByRole("Morgana","Merlino")
+	const listShuffle = [...list].sort(() => Math.random() - 0.5);
+	title2.textContent = "Morgana e Merlino sono " + listShuffle;
+  }
+    else if (role == "Morgana")
+  {
+	const list = getNamesByRole("Mordred","cattivo")
+	const listShuffle = [...list].sort(() => Math.random() - 0.5);
+	title2.textContent = "Gli altri cattivi sono " + listShuffle;
+  }
+    else if (role == "Mordred")
+  {
+	const list = getNamesByRole("Morgana","cattivo")
+	const listShuffle = [...list].sort(() => Math.random() - 0.5);
+	title2.textContent = "Gli altri cattivi sono " + listShuffle;
+  }
+    else if (role == "cattivo")
+  {
+	const list = getNamesByRole("Morgana","Mordred")
+	const listShuffle = [...list].sort(() => Math.random() - 0.5);
+	title2.textContent = "Gli altri cattivi sono " + listShuffle;
+  }
+});
+
+
 
   // Funzione per aggiornare la lista dei giocatori
   async function updatePlayers() {
@@ -151,8 +192,8 @@ document.addEventListener('keydown', function(e) {
     });
   }
 
-  updatePlayers();
-  setInterval(updatePlayers, 1000);
+  //updatePlayers();
+ // setInterval(updatePlayers, 1000);
 
 
 async function setStatusTrue(roomCode) {
@@ -231,7 +272,5 @@ confermaButton.addEventListener('click', async function() {
 
 
 </script>
-
-
 </body>
 </html>

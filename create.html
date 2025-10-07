@@ -79,7 +79,12 @@
 
   <script>
     const confermaButton = document.getElementById('conferma');
-
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault(); // Previene eventuali comportamenti predefiniti del form
+        confermaButton.click(); // Simula il click sul bottone
+    }
+});
     // Inizializza Supabase
     const supabaseUrl = 'https://ctnkeyycsbhadytnglbj.supabase.co';
     const supabaseKey = 'sb_publishable_CEVeeu7p1k-MvdqxIoOZtA_J_M_I79b';
@@ -95,7 +100,10 @@ async function createRoomAndPlayer(nickname, roomCode) {
         // Inserisci il room_code nella tabella rooms_id
         const { error: roomError } = await supabase
             .from('rooms_id')
-            .insert([{ room_code: roomCode }]);
+            .insert([{
+            room_code: roomCode, 
+            status: false
+            }]);
 
         if (roomError) throw roomError;
 
@@ -166,7 +174,7 @@ async function createRoomId(nickname) {
         createRoomId(nickname).then(roomCode => {
           if (roomCode) {
             //alert('Gioco creato con successo! Codice: ' + roomCode);
-            window.location.replace("waiting_players.html?roomCode=" + roomCode);
+            window.location.replace("waiting_players.html?roomCode=" + roomCode+"&player="+nickname);
           } else { 
             //alert('Errore nella creazione del gioco. Riprova.');
           }

@@ -80,7 +80,12 @@
 
   <script>
     const confermaButton = document.getElementById('conferma');
-
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault(); // Previene eventuali comportamenti predefiniti del form
+        confermaButton.click(); // Simula il click sul bottone
+    }
+});
     // Inizializza Supabase
     const supabaseUrl = 'https://ctnkeyycsbhadytnglbj.supabase.co';
     const supabaseKey = 'sb_publishable_CEVeeu7p1k-MvdqxIoOZtA_J_M_I79b';
@@ -131,7 +136,7 @@ async function checkRoomExists(roomCode) {
             const roomExists = await checkRoomExists(roomid);
             
             if (roomExists) {
-                await createRoomAndPlayer(nickname, roomid);
+                await createPlayer(nickname, roomid);
                 return roomid; // Restituisci il room code creato
             }
         } catch (error) {
@@ -148,7 +153,7 @@ confermaButton.addEventListener('click', async function() {
   if (nickname !== "" && roomid !== "") {
     const result = await addPlayer(nickname, roomid); // aspetta che finisca
     if (result) {
-      window.location.replace("waiting_host.html?roomCode=" + roomid);
+      window.location.replace("waiting_host.html?roomCode=" + roomid+"&player="+nickname);
     } else {
       alert("Errore stanza non trovata.");
     }

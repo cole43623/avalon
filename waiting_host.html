@@ -48,25 +48,6 @@
       text-align: center;
     }
 
-    .button {
-      display: inline-block;
-      margin: 10px;
-      padding: 15px 40px;
-      font-size: 1.5rem;
-      color: #f0e6d2;
-      background-color: #6b3e26;
-      border: 2px solid #a67c52;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      text-decoration: none;
-    }
-
-    .button:hover {
-      background-color: #8b5a2b;
-      box-shadow: 0 0 15px #fff;
-      transform: scale(1.1);
-    }
   </style>
 </head>
 <body>
@@ -89,6 +70,7 @@
 
   const params = new URLSearchParams(window.location.search);
   const roomCode = params.get('roomCode');
+  const nickname = params.get('player');
 
   const title = document.querySelector('h1');
   if (roomCode) {
@@ -111,6 +93,19 @@
       return;
     }
 
+	const { data: roomData, error: roomError } = await supabase
+	  .from('rooms_id')
+	  .select('status')
+	  .eq('room_code', roomCode)
+	  .single(); // perché ci aspettiamo una sola riga
+
+	if (roomError) {
+	  console.error('Errore nel recupero dello status della stanza:', roomError);
+	  return;
+	}
+	
+	if (roomData.status)
+		window.location.replace("game.html?roomCode=" + roomCode + "&player=" + nickname);
     // Svuota la lista
     playerList.innerHTML = '';
 
@@ -127,10 +122,7 @@
     });
   }
 
-  // Esegui subito la prima volta
   updatePlayers();
-
-  // Esegui ogni secondo
   setInterval(updatePlayers, 1000);
 </script>
 
