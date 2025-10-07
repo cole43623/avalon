@@ -219,28 +219,37 @@ async function setStatusVoted(roomCode, nickname, res) {
 }
 
 async function checkPlayersStatus2() {
-  if (!roomCode) return 0;
+  if (!roomCode) return false;
 
   try {
     const { data, error } = await supabase
       .from('players')
-      .select('name')
-      .eq('status', 'rejct o accept')
+      .select('status')
       .eq('room', roomCode);
 
     if (error) {
       console.error('Errore nel recupero dei giocatori:', error);
-      return 0;
+      return false;
     }
 
-    missionPlayers = data.map(p => p.name);
+    if (!data || data.length === 0) return false;
 
-    return missionPlayers.length;
+    const allValid = data.every(player => player.status === 'approve' || player.status === 'reject');
+
+    if (!allValid) return false;
+
+    const approveCount = data.filter(player => player.status === 'approve').length;
+    const rejectCount = data.filter(player => player.status === 'reject').length;
+
+    return approveCount > rejectCount ? 1 : 2;
+
   } catch (err) {
-    console.error('Errore nella funzione checkPlayersStatus:', err);
-    return 0;
+    console.error('Errore nella funzione checkPlayersStatus2:', err);
+    return false;
   }
 }
+
+
 
 function voteMission() {
   const playerList = document.getElementById('playerList');
@@ -300,7 +309,16 @@ function voteMission() {
     confirmVoteBtn.textContent = "Voto inviato!";
     confirmVoteBtn.remove();
     const success2 = await setStatusVoted(roomCode, nickname, selectedVote);
-    checkPlayersStatus2();
+    const interval2 = setInterval(async () => {
+        const result = await checkPlayersStatus2();
+        if (result) {
+            clearInterval(interval);
+            if (result == 1)
+              console.log("votato si");
+            else
+            console.log("votato no");
+        } 
+    }, 1000);
   });
 }
 
