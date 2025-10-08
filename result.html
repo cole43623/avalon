@@ -99,7 +99,6 @@
     const params = new URLSearchParams(window.location.search);
     const roomCode = params.get('roomCode');
     const nickname = params.get('player');
-    const level = params.get('level');
     let past;
 
     // Funzione per recuperare i voti della stanza
@@ -211,7 +210,7 @@
           window.location.replace("indovinamerlino.html?roomCode=" + roomCode + "&player=" + nickname);
         } else {
           // Continua con la prossima missione
-          window.location.replace("game" + (parseInt(level) + 1) + ".html?roomCode=" + roomCode + "&player=" + nickname);
+          window.location.replace("game" + (past.length + 2) + ".html?roomCode=" + roomCode + "&player=" + nickname);
         }
       } else {
         alert("Errore nell'aggiornamento dello status.");

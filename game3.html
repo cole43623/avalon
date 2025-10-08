@@ -100,6 +100,7 @@ let playersData = [];
 let missionPlayers = [];
 
 let round = 0;
+let level = 0;
 
 async function readRound() {
   try {
@@ -427,7 +428,7 @@ async function playMission()
 				if (result4) {
 					clearInterval(interval4);
 					const check2 = await setRound();
-					window.location.replace("result.html?roomCode=" + roomCode + "&player=" + nickname + "&result=" + result4);
+					window.location.replace("result.html?roomCode=" + roomCode + "&player=" + nickname);
 				} 
 			}, 1000);
 		}
@@ -445,8 +446,7 @@ async function playMission()
 		const result5 = await readRound();
 		if (result5 != round) {
 			clearInterval(interval5);
-			const result4 = await checkPlayersStatus4();
-			window.location.replace("result.html?roomCode=" + roomCode + "&player=" + nickname + "&result=" + result4);
+			window.location.replace("result.html?roomCode=" + roomCode + "&player=" + nickname);
 		} 
 	}, 1000);
 }
@@ -560,8 +560,28 @@ function voteMission() {
   });
 }
 
+async function readLevel() {
+  try {
+    const { data, error } = await supabase
+      .from('rooms_id')
+      .select('results')
+      .eq('room_code', roomCode);
+
+    if (error) {
+      console.error('Errore nella query:', error);
+      return 0; // valore di default
+    } else {
+      return data[0]?.results.length || 0;
+    }
+  } catch (err) {
+    console.error('Errore:', err);
+    return 0; // valore di default
+  }
+}
+  
 getPlayersByRoom().then(async players => {
   round = await readRound();
+    level = await readLevel();
   const role = playersData.find(p => p.name === nickname)?.role;
   const title = document.querySelector('h1');
   title.textContent = nickname + " sei " + role;
