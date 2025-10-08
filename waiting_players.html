@@ -79,7 +79,7 @@ document.addEventListener('keydown', function(e) {
       console.error('Errore nel recupero dei giocatori:', error);
       return;
     }
-	confermaButton.disabled = data.length < 2;
+	confermaButton.disabled = data.length < 4;
     // Svuota la lista
     playerList.innerHTML = '';
 

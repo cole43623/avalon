@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
   <!-- Includi Supabase via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="variabili.js"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
 
@@ -89,36 +90,37 @@ getPlayersByRoom().then(players => {
   {
 	const list = getNamesByRole("Morgana","cattivo")
 	const listShuffle = [...list].sort(() => Math.random() - 0.5);
-	title2.textContent = "Morgana e i cattivi sono " + listShuffle;
+	title2.textContent = "Morgana e i cattivi sono: " + listShuffle.join(", ");
   }
   else if (role == "Percival")
   {
 	const list = getNamesByRole("Morgana","Merlino")
 	const listShuffle = [...list].sort(() => Math.random() - 0.5);
-	title2.textContent = "Morgana e Merlino sono " + listShuffle;
+	title2.textContent = "Morgana e Merlino sono " + listShuffle.join(", ");
   }
     else if (role == "Morgana")
   {
 	const list = getNamesByRole("Mordred","cattivo")
 	const listShuffle = [...list].sort(() => Math.random() - 0.5);
-	title2.textContent = "Gli altri cattivi sono " + listShuffle;
+	title2.textContent = "Gli altri cattivi sono " + listShuffle.join(", ");
   }
     else if (role == "Mordred")
   {
 	const list = getNamesByRole("Morgana","cattivo")
 	const listShuffle = [...list].sort(() => Math.random() - 0.5);
-	title2.textContent = "Gli altri cattivi sono " + listShuffle;
+	title2.textContent = "Gli altri cattivi sono " + listShuffle.join(", ");
   }
     else if (role == "cattivo")
   {
 	const list = getNamesByRole("Morgana","Mordred")
 	const listShuffle = [...list].sort(() => Math.random() - 0.5);
-	title2.textContent = "Gli altri cattivi sono " + listShuffle;
+	title2.textContent = "Gli altri cattivi sono " + listShuffle.join(", ");
   }
     else if (role == "buono")
   {
 	title2.textContent = "GG vinci.";
   }
+  title2.innerHTML += "<br>Il numero di persone necessarie per ogni missione: " + nec[playersData.length].join(", ");
 });
 
 

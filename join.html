@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="styles.css">
   <style>
 
-    input[type="text"] {
+    input {
       padding: 10px;
       font-size: 1.2rem;
       border-radius: 5px;
@@ -20,6 +20,7 @@
       width: 80%;
       max-width: 300px;
       text-align: center;
+      text-transform: uppercase;
     }
 
   </style>
@@ -27,7 +28,7 @@
 <body>
   <div class="container">
     <h1>Inserisci Nick</h1>
-    <input type="text" id="roomid" placeholder="ID stanza">
+    <input type="number" id="roomid" placeholder="ID stanza" inputmode="numeric" oninput="this.value = this.value.slice(0, 5)">
     <input type="text" id="nickname" placeholder="Il tuo nickname">
     <br>
     <button class="button" id="conferma">Conferma</button>
@@ -104,7 +105,7 @@ async function checkRoomExists(roomCode) {
 }
 
 confermaButton.addEventListener('click', async function() {
-  const nickname = document.getElementById('nickname').value.trim();
+  const nickname = document.getElementById('nickname').value.trim().toUpperCase();;
   const roomid = document.getElementById('roomid').value.trim();
 
   if (nickname !== "" && roomid !== "") {

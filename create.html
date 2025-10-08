@@ -20,6 +20,7 @@
       width: 80%;
       max-width: 300px;
       text-align: center;
+      text-transform: uppercase;
     }
 
   </style>
@@ -127,7 +128,7 @@ async function createRoomId(nickname) {
 }
 
     confermaButton.addEventListener('click', function() {
-      const nickname = document.getElementById('nickname').value.trim();
+      const nickname = document.getElementById('nickname').value.trim().toUpperCase();;
 
       if(nickname !== "") {
         createRoomId(nickname).then(roomCode => {
