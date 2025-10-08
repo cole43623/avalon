@@ -102,11 +102,16 @@ document.addEventListener('keydown', function(e) {
 
 async function setStatusTrue(roomCode) {
   try {
-    const { data, error } = await supabase
-      .from('rooms_id')
-      .update({ status: true })   // imposta a TRUE (booleano)
-      .eq('room_code', roomCode)  // filtra per codice stanza
-      .select();                  // opzionale: restituisce la riga aggiornata
+		const { data, error } = await supabase
+		  .from('rooms_id')
+		  .update({
+			status: true,   // imposta a TRUE
+			round: 0,       // imposta a 0
+			votes: null,    // imposta a NULL
+			results: []     // imposta a array vuoto
+		  })
+		  .eq('room_code', roomCode)  // filtra per codice stanza
+		  .select();
 
     if (error) throw error;
 
@@ -144,10 +149,14 @@ async function setRoles(roomCode) {
             const playerId = players[i].id;
             const ruolo = ruoliShuffle[i];
 
-            const { error: updateError } = await supabase
-                .from('players')
-                .update({ role: ruolo })
-                .eq('id', playerId);
+			const { error: updateError } = await supabase
+			  .from('players')
+			  .update({
+				role: ruolo,
+				status: null,
+				mission: false
+			  })
+			  .eq('id', playerId);
 
             if (updateError) {
                 throw updateError;
