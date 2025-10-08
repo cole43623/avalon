@@ -104,12 +104,7 @@ async function setStatusTrue(roomCode) {
   try {
 		const { data, error } = await supabase
 		  .from('rooms_id')
-		  .update({
-			status: true,   // imposta a TRUE
-			round: 0,       // imposta a 0
-			votes: null,    // imposta a NULL
-			results: []     // imposta a array vuoto
-		  })
+		  .update({status: true})
 		  .eq('room_code', roomCode)  // filtra per codice stanza
 		  .select();
 

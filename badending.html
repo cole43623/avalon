@@ -98,16 +98,26 @@
     <div class="players-list">
       <div class="players-title">Rivelazione dei Ruoli</div>
       <div id="playersList"></div>
+	  <button class="button" id="conferma" >Nuova partita</button>
     </div>
   </div>
 
   <script>
+    const confermaButton = document.getElementById('conferma');
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault(); // Previene eventuali comportamenti predefiniti del form
+        confermaButton.click(); // Simula il click sul bottone
+    }
+});
     const supabaseUrl = 'https://ctnkeyycsbhadytnglbj.supabase.co';
     const supabaseKey = 'sb_publishable_CEVeeu7p1k-MvdqxIoOZtA_J_M_I79b';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
     
     const params = new URLSearchParams(window.location.search);
     const roomCode = params.get('roomCode');
+    const nickname = params.get('player');
+	let players;
 
     async function getPlayers() {
       try {
@@ -115,8 +125,20 @@
           .from('players')
           .select('name, role')
           .eq('room', roomCode)
-          .order('name', { ascending: true });
+          .order('id');
         
+		if (nickname == data[0].name)
+		{
+			const { data, error } = await supabase
+		  .from('rooms_id')
+		  .update({
+			status: false,
+			votes: null,    // imposta a NULL
+			results: []     // imposta a array vuoto
+		  })
+		  .eq('room_code', roomCode)  // filtra per codice stanza
+		  .select();
+		}
         if (error) throw error;
         return data;
       } catch (err) {
@@ -126,7 +148,7 @@
     }
 
     async function displayPlayers() {
-      const players = await getPlayers();
+      players = await getPlayers();
       const playersList = document.getElementById('playersList');
       
       if (players.length === 0) {
@@ -152,6 +174,15 @@
     }
 
     displayPlayers();
+
+confermaButton.addEventListener('click', async function() {
+    if (nickname == players[0].name) {
+      window.location.replace("waiting_players.html?roomCode=" + roomCode+"&player="+nickname);
+    } else {
+      window.location.replace("waiting_host.html?roomCode=" + roomCode+"&player="+nickname);
+    }
+
+});
   </script>
 </body>
 </html>
