@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avalon</title>
+  <!-- Font gotico da Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
+  <!-- Includi Supabase via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="styles.css">
+
+</head>
+<body>
+  <div class="container">
+    <h1></h1>
+
+    <br>
+    <button class="button" id="conferma" >Avanti</button>
+  </div>
+
+<script>
+  const confermaButton = document.getElementById('conferma');
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault(); // Previene eventuali comportamenti predefiniti del form
+        confermaButton.click(); // Simula il click sul bottone
+    }
+});
+  
+  const supabaseUrl = 'https://ctnkeyycsbhadytnglbj.supabase.co';
+  const supabaseKey = 'sb_publishable_CEVeeu7p1k-MvdqxIoOZtA_J_M_I79b';
+  const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+  const params = new URLSearchParams(window.location.search);
+  const roomCode = params.get('roomCode');
+  const nickname = params.get('player');
+  const level = params.get('level');
+
+
+async function getRoomVotes() {
+  if (!roomCode) return null;
+
+  try {
+    const { data, error } = await supabase
+      .from('rooms_id')
+      .select('votes')  // seleziona solo la colonna votes
+      .eq('room_code', roomCode)
+      .single();  // restituisce un singolo record
+
+    if (error) {
+      console.error('Errore nel recupero dei voti:', error);
+      return null;
+    }
+
+    return data?.votes || null;  // restituisce l'array [approveCount, rejectCount]
+
+  } catch (err) {
+    console.error('Errore nella funzione getRoomVotes:', err);
+    return null;
+  }
+}
+
+async function setStatusTrue(roomCode, nickname) {
+  try {
+    const { data, error } = await supabase
+      .from('players')
+      .update({ status: 'true' })    // aggiorna status
+      .eq('room', roomCode)          // filtra per room
+      .eq('name', nickname)          // filtra per nickname
+      .limit(1)                     // opzionale: assicura massimo un record
+      .select();
+
+    if (error) throw error;
+
+    if (data.length === 0) {
+      console.log("Nessun player trovato con quel roomCode e nickname");
+      return false;
+    }
+
+    console.log("Status aggiornato a TRUE per il player:", nickname);
+    return true;
+  } catch (err) {
+    console.error("Errore aggiornando lo status:", err);
+    return null;
+  }
+}
+
+(async () => {
+  const votes = await getRoomVotes();
+  const title = document.querySelector('h1');
+  title.textContent = 'Missione rifiutata con ' + votes[1] + ' voti contrari e ' + votes[0] + ' voti favorevoli.';
+})();
+
+confermaButton.addEventListener('click', async function() {
+
+    const updated = await setStatusTrue(roomCode, nickname);
+    if (updated) {
+      window.location.replace("game" + level + ".html?roomCode=" + roomCode + "&player=" + nickname);
+    } else {
+      alert("Errore nell'aggiornamento dello status.");
+    }
+
+});
+
+
+</script>
+
+
+</body>
+</html>

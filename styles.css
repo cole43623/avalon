@@ -6,7 +6,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      background: url('https://i.imgur.com/GsDyBrC.jpg') no-repeat center center fixed;
+      background: url('background.jpg') no-repeat center center fixed;
       background-size: cover;
       font-family: 'MedievalSharp', cursive;
       color: #f0e6d2;

@@ -56,6 +56,7 @@ document.addEventListener('keydown', function(e) {
   const params = new URLSearchParams(window.location.search);
   const roomCode = params.get('roomCode');
   const nickname = params.get('player');
+  let stop = 0;
 
   const title = document.querySelector('h1');
   if (roomCode) {
@@ -66,7 +67,7 @@ document.addEventListener('keydown', function(e) {
 
   // Funzione per aggiornare la lista dei giocatori
   async function updatePlayers() {
-    if (!roomCode) return;
+    if (!roomCode || stop) return;
 
     const { data, error } = await supabase
       .from('players')
@@ -161,7 +162,7 @@ async function setRoles(roomCode) {
 
 
 confermaButton.addEventListener('click', async function() {
-
+    stop = 1;
     const updated2 = await setRoles(roomCode);
     const updated = await setStatusTrue(roomCode);
     if (updated && updated2) {

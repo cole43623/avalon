@@ -220,7 +220,7 @@ async function checkPlayersStatus2() {
       .from('players')
       .select('status')
       .eq('room', roomCode)
-	  .order('name');
+      .order('name');
 
     if (error) {
       console.error('Errore nel recupero dei giocatori:', error);
@@ -229,13 +229,27 @@ async function checkPlayersStatus2() {
 
     if (!data || data.length === 0) return false;
 
-    const allValid = data.every(player => player.status === 'approve' || player.status === 'reject');
-
-    if (!allValid) return false;
+    // Controlla se tutti i giocatori hanno votato (approve o reject)
+    const allVoted = data.every(player => player.status === 'approve' || player.status === 'reject');
+    if (!allVoted) return false;
 
     const approveCount = data.filter(player => player.status === 'approve').length;
     const rejectCount = data.filter(player => player.status === 'reject').length;
 
+    const { data: updateData, error: updateError } = await supabase
+      .from('rooms_id')
+      .update({ 
+        votes: [approveCount, rejectCount]  // aggiorna l'array di voti
+      })
+      .eq('room_code', roomCode)
+      .select();
+
+    if (updateError) {
+      console.error('Errore nell\'aggiornamento dei voti:', updateError);
+      return false;
+    }
+
+    // Restituisce 1 se approvato, 2 se rifiutato
     return approveCount > rejectCount ? 1 : 2;
 
   } catch (err) {
@@ -300,15 +314,41 @@ async function checkPlayersStatus4() {
   }
 }
 
-function playMission()
+async function getRoomVotes() {
+  if (!roomCode) return null;
+
+  try {
+    const { data, error } = await supabase
+      .from('rooms_id')
+      .select('votes')  // seleziona solo la colonna votes
+      .eq('room_code', roomCode)
+      .single();  // restituisce un singolo record
+
+    if (error) {
+      console.error('Errore nel recupero dei voti:', error);
+      return null;
+    }
+
+    return data?.votes || null;  // restituisce l'array [approveCount, rejectCount]
+
+  } catch (err) {
+    console.error('Errore nella funzione getRoomVotes:', err);
+    return null;
+  }
+}
+
+async function playMission()
 {
   const playerList = document.getElementById('playerList');
   playerList.innerHTML = '';
 
   const title2 = document.querySelector('h2');
+  const votes = await getRoomVotes();
   if (missionPlayers.includes(nickname))
   {
-    title2.textContent = "Vuoi far fallire la missione con " + missionPlayers.join(", ") + "?";
+    title2.innerHTML = 
+	"Missione approvata con " + votes[0] + " voti favorevoli e " + votes[1] + " voti contrari.<br>" +
+	"Vuoi far fallire la missione con " + missionPlayers.join(", ") + "?";
      // Crea contenitore delle immagini di voto
 	  const voteContainer = document.createElement('div');
 	  voteContainer.style.display = 'flex';
@@ -359,7 +399,7 @@ function playMission()
 		confirmVoteBtn.textContent = "Voto inviato!";
 		confirmVoteBtn.remove();
 		const success4 = await setStatusVoted(roomCode, nickname, selectedVote);
-		if (missionPlayers[0].name === nickname)
+		if (missionPlayers[0] === nickname)
 		{
 			const interval4 = setInterval(async () => {
 				const result4 = await checkPlayersStatus4();
@@ -376,11 +416,14 @@ function playMission()
   }
   else
   {
-    title2.textContent = "Aspetta che " + missionPlayers.join(", ") + " facciano la missione.";
+    title2.innerHTML = 
+  "Missione approvata con " + votes[0] + " voti favorevoli e " + votes[1] + " voti contrari.<br>" +
+  "Aspetta che " + missionPlayers.join(", ") + " facciano la missione.";
   }
 	const interval5 = setInterval(async () => {
 		const result5 = await readRound();
 		if (result5 != round) {
+			clearInterval(interval5);
 			const result4 = await checkPlayersStatus4();
 			window.location.replace("game3.html?roomCode=" + roomCode + "&player=" + nickname + "&result=" + result4);
 		} 
@@ -465,8 +508,7 @@ function voteMission() {
 				{
 				  console.log("votato no");
 				  const check2 = await setRound();
-				  setStatusVoted(roomCode, nickname, 'true');
-				  window.location.reload();
+				  window.location.replace("rejected.html?roomCode=" + roomCode + "&player=" + nickname + "&level=2");
 				}
 			} 
 		}, 1000);
@@ -476,8 +518,7 @@ function voteMission() {
 		const interval2 = setInterval(async () => {
 			const result2 = await readRound();
 			if (result2 != round) {
-				setStatusVoted(roomCode, nickname, 'true');
-				window.location.reload();
+				window.location.replace("rejected.html?roomCode=" + roomCode + "&player=" + nickname + "&level=2");
 			} 
 		}, 1000);
 		const interval3 = setInterval(async () => {
@@ -497,7 +538,6 @@ function voteMission() {
 	
   });
 }
-
 
 getPlayersByRoom().then(async players => {
   round = await readRound();
