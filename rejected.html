@@ -35,7 +35,6 @@ document.addEventListener('keydown', function(e) {
   const params = new URLSearchParams(window.location.search);
   const roomCode = params.get('roomCode');
   const nickname = params.get('player');
-  const level = params.get('level');
 
 
 async function getRoomVotes() {
@@ -101,7 +100,7 @@ let updated;
 confermaButton.addEventListener('click', async function() {
 
     if (updated) {
-      window.location.replace("game" + level + ".html?roomCode=" + roomCode + "&player=" + nickname);
+      window.location.replace("game2.html?roomCode=" + roomCode + "&player=" + nickname);
     } else {
       alert("Errore nell'aggiornamento dello status.");
     }

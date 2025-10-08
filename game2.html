@@ -530,7 +530,7 @@ function voteMission() {
 				{
 				  console.log("votato no");
 				  const check2 = await setRound();
-				  window.location.replace("rejected.html?roomCode=" + roomCode + "&player=" + nickname + "&level=2");
+				  window.location.replace("rejected.html?roomCode=" + roomCode + "&player=" + nickname);
 				}
 			} 
 		}, 1000);
@@ -540,7 +540,7 @@ function voteMission() {
 		const interval2 = setInterval(async () => {
 			const result2 = await readRound();
 			if (result2 != round) {
-				window.location.replace("rejected.html?roomCode=" + roomCode + "&player=" + nickname + "&level=2");
+				window.location.replace("rejected.html?roomCode=" + roomCode + "&player=" + nickname);
 			} 
 		}, 1000);
 		const interval3 = setInterval(async () => {
@@ -591,7 +591,7 @@ getPlayersByRoom().then(async players => {
   {
     confermaButton.style.visibility = 'visible';
     const title2 = document.querySelector('h2');
-    title2.textContent = "Scegli" + nec[playersData.length][level] + "persone da mandare in missione."
+    title2.textContent = "Scegli " + nec[playersData.length][level] + " persone da mandare in missione."
     playersData.forEach(player => {
       const li = document.createElement('li');
       li.textContent = player.name;
