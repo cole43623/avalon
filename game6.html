@@ -172,7 +172,7 @@ async function checkPlayersStatus() {
     const { data, error } = await supabase
       .from('players')
       .select('name')
-      .eq(mission, true)
+      .eq('mission', true)
       .eq('room', roomCode)
 	  .order('name');
 
