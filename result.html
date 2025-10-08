@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avalon</title>
+  <!-- Font gotico da Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
+  <!-- Includi Supabase via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    .missions-container {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 30px 0;
+      flex-wrap: wrap;
+    }
+
+    .mission-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mission-label {
+      font-family: 'MedievalSharp', serif;
+      font-size: 14px;
+      color: #d4af37;
+      text-align: center;
+    }
+
+    .mission-icon {
+      width: 60px;
+      height: 60px;
+      object-fit: contain;
+      transition: transform 0.3s ease;
+    }
+
+    .mission-icon:hover {
+      transform: scale(1.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1></h1>
+    <div class="missions-container">
+      <div class="mission-item">
+        <div class="mission-label">Missione 1</div>
+        <img id="mission1" src="" alt="Missione 1" class="mission-icon">
+      </div>
+      <div class="mission-item">
+        <div class="mission-label">Missione 2</div>
+        <img id="mission2" src="" alt="Missione 2" class="mission-icon">
+      </div>
+      <div class="mission-item">
+        <div class="mission-label">Missione 3</div>
+        <img id="mission3" src="" alt="Missione 3" class="mission-icon">
+      </div>
+      <div class="mission-item">
+        <div class="mission-label">Missione 4</div>
+        <img id="mission4" src="" alt="Missione 4" class="mission-icon">
+      </div>
+      <div class="mission-item">
+        <div class="mission-label">Missione 5</div>
+        <img id="mission5" src="" alt="Missione 5" class="mission-icon">
+      </div>
+    </div>
+    <button class="button" id="conferma">Avanti</button>
+  </div>
+
+  <script>
+    // Riferimenti agli elementi DOM
+    const confermaButton = document.getElementById('conferma');
+    
+    // Event listener per il tasto Enter
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        confermaButton.click();
+      }
+    });
+    
+    // Configurazione Supabase
+    const supabaseUrl = 'https://ctnkeyycsbhadytnglbj.supabase.co';
+    const supabaseKey = 'sb_publishable_CEVeeu7p1k-MvdqxIoOZtA_J_M_I79b';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    
+    // Parametri URL
+    const params = new URLSearchParams(window.location.search);
+    const roomCode = params.get('roomCode');
+    const nickname = params.get('player');
+    const level = params.get('level');
+    let past;
+
+    // Funzione per recuperare i voti della stanza
+    async function getRoomVotes() {
+      if (!roomCode) return null;
+      try {
+        const { data, error } = await supabase
+          .from('rooms_id')
+          .select('votes')
+          .eq('room_code', roomCode)
+          .single();
+        if (error) {
+          console.error('Errore nel recupero dei voti:', error);
+          return null;
+        }
+        return data?.votes || null;
+      } catch (err) {
+        console.error('Errore nella funzione getRoomVotes:', err);
+        return null;
+      }
+    }
+
+    // Funzione per recuperare le missioni passate
+    async function getPastMission() {
+      if (!roomCode) return null;
+      try {
+        const { data, error } = await supabase
+          .from('rooms_id')
+          .select('results')
+          .eq('room_code', roomCode)
+          .single();
+        if (error) {
+          console.error('Errore nel recupero delle missioni passate:', error);
+          return null;
+        }
+        return data?.results || null;
+      } catch (err) {
+        console.error('Errore nella funzione getPastMission:', err);
+        return null;
+      }
+    }
+
+    // Funzione per impostare lo status del giocatore a true
+    async function setStatusTrue(roomCode, nickname) {
+      try {
+        const { data, error } = await supabase
+          .from('players')
+          .update({ status: 'true' })
+          .eq('room', roomCode)
+          .eq('name', nickname)
+          .limit(1)
+          .select();
+        if (error) throw error;
+        if (data.length === 0) {
+          console.log("Nessun player trovato con quel roomCode e nickname");
+          return false;
+        }
+        console.log("Status aggiornato a TRUE per il player:", nickname);
+        return true;
+      } catch (err) {
+        console.error("Errore aggiornando lo status:", err);
+        return null;
+      }
+    }
+
+    // Inizializzazione della pagina
+    (async () => {
+      const votes = await getRoomVotes();
+      past = await getPastMission();
+      const title = document.querySelector('h1');
+      
+      if (past && past.length > 0) {
+        // Determina se l'ultima missione è riuscita o fallita
+        if (past[past.length - 1]) {
+          title.textContent = 'Missione riuscita con ' + votes[0] + ' successi e ' + votes[1] + ' fallimenti';
+        } else {
+          title.textContent = 'Missione fallita con ' + votes[1] + ' fallimenti e ' + votes[0] + ' successi';
+        }
+        
+        // Popola le 5 icone delle missioni
+        for (let i = 0; i < 5; i++) {
+          const missionImg = document.getElementById(`mission${i + 1}`);
+          if (past[i] !== undefined) {
+            // Mostra icona oro per successo, bronzo per fallimento
+            missionImg.src = past[i] ? 'gold.png' : 'bronze.png';
+            missionImg.style.display = 'block';
+          } else {
+            // Nascondi le icone delle missioni non ancora giocate
+            missionImg.style.display = 'none';
+          }
+        }
+      }
+    })();
+
+    // Event listener per il pulsante conferma
+    confermaButton.addEventListener('click', async function() {
+      const updated = await setStatusTrue(roomCode, nickname);
+      if (updated) {
+        // Conta successi e fallimenti
+        const successi = past.filter(m => m === true).length;
+        const fallimenti = past.filter(m => m === false).length;
+        
+        // Determina la prossima pagina in base ai risultati
+        if (fallimenti >= 3) {
+          // 3 o più fallimenti = bad ending
+          window.location.replace("badending.html?roomCode=" + roomCode + "&player=" + nickname);
+        } else if (successi >= 3) {
+          // 3 o più successi = indovina Merlino
+          window.location.replace("indovinamerlino.html?roomCode=" + roomCode + "&player=" + nickname);
+        } else {
+          // Continua con la prossima missione
+          window.location.replace("game" + (parseInt(level) + 1) + ".html?roomCode=" + roomCode + "&player=" + nickname);
+        }
+      } else {
+        alert("Errore nell'aggiornamento dello status.");
+      }
+    });
+  </script>
+</body>
+</html>

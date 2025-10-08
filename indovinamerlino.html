@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avalon</title>
+  <!-- Font gotico da Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
+  <!-- Includi Supabase via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+
+    .player-item {
+      font-size: 1.8rem;
+      padding: 8px;
+      margin: 5px 0;
+      background-color: rgba(107, 62, 38, 0.5);
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    /* Effetto hover e selezione */
+    .player-item:hover {
+      background-color: rgba(150, 90, 50, 0.7);
+    }
+
+    .selected {
+      background-color: rgba(255, 215, 0, 0.7);
+      color: #000;
+      font-weight: bold;
+      text-shadow: none;
+    }
+
+    .button:disabled {
+  background-color: #3e1f10; /* colore più scuro */
+  border-color: #5a3e2b;
+  color: #999; /* testo più spento */
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Disabilita l'hover quando il bottone è disabilitato */
+.button:disabled:hover {
+  background-color: #3e1f10; /* stesso colore di default per disabled */
+  box-shadow: none;
+  transform: none;
+}
+
+.vote-icon {
+  width: 100px;
+  height: 100px;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+  filter: drop-shadow(0 0 5px #000);
+}
+
+.vote-icon:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 10px #fff);
+}
+
+.selected-vote {
+  transform: scale(1.3);
+  filter: drop-shadow(0 0 20px gold);
+}
+
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1></h1>
+    <h2></h2>
+    <ul id="playerList" style="list-style: none; padding: 0; margin: 0;">
+    </ul>
+    <br>
+    <button class="button" id="conferma" disabled style="visibility: hidden;">Conferma</button>
+  </div>
+
+<script>
+const confermaButton = document.getElementById('conferma');
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    confermaButton.click();
+  }
+});
+
+const supabaseUrl = 'https://ctnkeyycsbhadytnglbj.supabase.co';
+const supabaseKey = 'sb_publishable_CEVeeu7p1k-MvdqxIoOZtA_J_M_I79b';
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+const params = new URLSearchParams(window.location.search);
+const roomCode = params.get('roomCode');
+const nickname = params.get('player');
+let playersData = [];
+let guess = "";
+
+async function getPlayersByRoom() {
+  try {
+    const { data, error } = await supabase
+      .from('players')
+      .select('name, role')
+      .eq('room', roomCode)
+      .order('name');
+
+    if (error) {
+      console.error('Errore nella query:', error);
+      playersData = [];
+      return [];
+    }
+    
+    playersData = data || [];
+    return playersData;
+  } catch (err) {
+    console.error('Errore:', err);
+    playersData = [];
+    return [];
+  }
+}
+
+async function checkPlayersStatus() {
+  if (!roomCode) return 0;
+
+  try {
+    const { data, error } = await supabase
+      .from('players')
+      .select('name, status')
+      .eq('room', roomCode)
+      .eq('role', 'Morgana')
+      .single();
+
+    if (error) {
+      console.error('Errore nel recupero dei giocatori:', error);
+      return 0;
+    }
+
+    if (data.status === 'Merlino') {
+      return 2; // Morgana ha indovinato Merlino (cattivi vincono)
+    } else if (data.status === 'non_merlino') {
+      return 1; // Morgana ha sbagliato (buoni vincono)
+    }
+
+    return 0; // Non ha ancora scelto
+
+  } catch (err) {
+    console.error('Errore nella funzione checkPlayersStatus:', err);
+    return 0;
+  }
+}
+
+async function setStatusVoted(roomCode, nickname, res) {
+  try {
+    const { data, error } = await supabase
+      .from('players')
+      .update({ status: res })
+      .eq('room', roomCode)
+      .eq('name', nickname)
+      .select();
+
+    if (error) throw error;
+
+    if (!data || data.length !== 1) {
+      console.log("Nessun player trovato con quel roomCode e nome corrispondente");
+      return false;
+    }
+
+    console.log("Status aggiornato per il giocatore:", nickname, "->", res);
+    return true;
+  } catch (err) {
+    console.error("Errore aggiornando lo status:", err);
+    return null;
+  }
+}
+
+getPlayersByRoom().then(async players => {
+  const playerList = document.getElementById('playerList');
+  const role = playersData.find(p => p.name === nickname)?.role;
+  const title = document.querySelector('h1');
+  title.textContent = nickname + " sei " + role;
+  
+  if (role === "Morgana") {
+    confermaButton.style.visibility = 'visible';
+    const title2 = document.querySelector('h2');
+    title2.textContent = "Scegli chi pensi sia Merlino.";
+    
+    playersData.forEach(player => {
+      if (player.role === 'Morgana' || player.role === 'Mordred' || player.role === 'cattivo') return;
+      
+      const li = document.createElement('li');
+      li.textContent = player.name;
+      li.classList.add('player-item');
+      li.addEventListener('click', () => {
+        if (guess === player.name) {
+          guess = "";
+          li.classList.remove('selected');
+        } else {
+          // Rimuovi selezione precedente
+          const prevSelected = playerList.querySelector('.selected');
+          if (prevSelected) {
+            prevSelected.classList.remove('selected');
+          }
+          guess = player.name;
+          li.classList.add('selected');
+        }
+        confermaButton.disabled = guess === "";
+        console.log("Giocatore selezionato:", guess);
+      });
+      playerList.appendChild(li);
+    });
+  } else {
+    const title2 = document.querySelector('h2');
+    const morganaPlayer = playersData.find(p => p.role === "Morgana");
+    title2.textContent = "Aspetta che " + (morganaPlayer?.name || "Morgana") + " scelga chi è Merlino.";
+    
+    const interval = setInterval(async () => {
+      const count = await checkPlayersStatus();
+      if (count) {
+        clearInterval(interval);
+        if (count === 1) {
+          window.location.replace("goodending.html?roomCode=" + roomCode + "&player=" + nickname);
+        } else {
+          window.location.replace("badending.html?roomCode=" + roomCode + "&player=" + nickname);
+        }
+      }
+    }, 1000);
+  }
+});
+
+confermaButton.addEventListener('click', async () => {
+  if (guess === "") return;
+  
+  confermaButton.disabled = true;
+  confermaButton.textContent = "Invio...";
+  
+  // Determina se l'indovinato è Merlino
+  const selectedPlayer = playersData.find(p => p.name === guess);
+  const result = selectedPlayer?.role === 'Merlino' ? 'Merlino' : 'non_merlino';
+  
+  console.log("Guess:", guess, "Role:", selectedPlayer?.role, "Result:", result);
+  
+  // Aggiorna lo status
+  await setStatusVoted(roomCode, nickname, result);
+  
+  // Redirect in base al risultato
+  if (result === 'Merlino') {
+    window.location.replace("badending.html?roomCode=" + roomCode + "&player=" + nickname);
+  } else {
+    window.location.replace("goodending.html?roomCode=" + roomCode + "&player=" + nickname);
+  }
+});
+
+</script>
+</body>
+</html>

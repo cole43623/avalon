@@ -58,7 +58,8 @@ async function createRoomAndPlayer(nickname, roomCode) {
 			.insert([{
 				room_code: roomCode, 
 				status: false,
-				round: 0
+				round: 0,
+				results: [] 
 			}]);
 
 

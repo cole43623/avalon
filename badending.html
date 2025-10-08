@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avalon - I Cattivi Hanno Vinto</title>
+  <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.subtitle {
+  font-size: 1.2em;
+  margin-bottom: 30px;
+  color: #d2b48c; /* beige caldo */
+}
+
+.players-list {
+  background: rgba(60, 30, 10, 0.5); /* marrone scuro trasparente */
+  border: 2px solid #a67c52; /* bronzo */
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 30px;
+}
+
+.players-title {
+  font-size: 1.5em;
+  margin-bottom: 20px;
+  color: #c9a36b; /* oro opaco */
+}
+
+.player-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 20px;
+  margin: 8px 0;
+  background: rgba(20, 10, 0, 0.6); /* marrone quasi nero */
+  border: 1px solid #8b5a2b; /* rame antico */
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.player-item:hover {
+  background: rgba(139, 90, 43, 0.3); /* marrone chiaro al passaggio */
+  transform: translateX(5px);
+}
+
+.player-name {
+  font-size: 1.1em;
+  color: #f0e6d2; /* crema chiaro */
+}
+
+.player-role {
+  font-size: 1.1em;
+  font-weight: bold;
+}
+
+/* Ruoli: toni caldi, non troppo saturi */
+.role-good {
+  color: #8fbc8f; /* verde tenue tipo salvia */
+}
+
+.role-evil {
+  color: #8b4513; /* marrone bruciato */
+}
+
+.skull {
+  font-size: 3em;
+  margin: 20px 0;
+  color: #d2b48c;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="skull">☠️</div>
+    <h1>LE FORZE DEL MALE TRIONFANO</h1>
+    <p class="subtitle">L'oscurità ha prevalso su Avalon...</p>
+    
+    <div class="players-list">
+      <div class="players-title">Rivelazione dei Ruoli</div>
+      <div id="playersList"></div>
+    </div>
+  </div>
+
+  <script>
+    const supabaseUrl = 'https://ctnkeyycsbhadytnglbj.supabase.co';
+    const supabaseKey = 'sb_publishable_CEVeeu7p1k-MvdqxIoOZtA_J_M_I79b';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    
+    const params = new URLSearchParams(window.location.search);
+    const roomCode = params.get('roomCode');
+
+    async function getPlayers() {
+      try {
+        const { data, error } = await supabase
+          .from('players')
+          .select('name, role')
+          .eq('room', roomCode)
+          .order('name', { ascending: true });
+        
+        if (error) throw error;
+        return data;
+      } catch (err) {
+        console.error('Errore nel recupero dei giocatori:', err);
+        return [];
+      }
+    }
+
+    async function displayPlayers() {
+      const players = await getPlayers();
+      const playersList = document.getElementById('playersList');
+      
+      if (players.length === 0) {
+        playersList.innerHTML = '<p style="color: #ffaaaa;">Nessun giocatore trovato</p>';
+        return;
+      }
+      
+      players.forEach(player => {
+        const playerItem = document.createElement('div');
+        playerItem.className = 'player-item';
+        
+        const roleClass = player.role.toLowerCase().includes('cattivo') || 
+                         player.role.toLowerCase().includes('morgana') ||
+                         player.role.toLowerCase().includes('mordred') ? 'role-evil' : 'role-good';
+        
+        playerItem.innerHTML = `
+          <span class="player-name">${player.name}</span>
+          <span class="player-role ${roleClass}">${player.role}</span>
+        `;
+        
+        playersList.appendChild(playerItem);
+      });
+    }
+
+    displayPlayers();
+  </script>
+</body>
+</html>

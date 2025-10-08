@@ -156,7 +156,7 @@ async function getPlayersByRoom() {
       playersData = []; // reset globale in caso di errore
     } else {
       playersData = data; // assegna a variabile globale
-	  
+      
     }
   } catch (err) {
     console.error('Errore:', err);
@@ -181,7 +181,7 @@ async function checkPlayersStatus() {
     }
 
     missionPlayers = data.map(p => p.name);
-	 missionPlayers.sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }));
+	missionPlayers.sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }));
 
     return missionPlayers.length;
   } catch (err) {
@@ -529,7 +529,7 @@ function voteMission() {
 				{
 				  console.log("votato no");
 				  const check2 = await setRound();
-				  window.location.replace("rejected.html?roomCode=" + roomCode + "&player=" + nickname + "&level=2");
+				  window.location.replace("rejected.html?roomCode=" + roomCode + "&player=" + nickname + "&level=6");
 				}
 			} 
 		}, 1000);
@@ -539,7 +539,7 @@ function voteMission() {
 		const interval2 = setInterval(async () => {
 			const result2 = await readRound();
 			if (result2 != round) {
-				window.location.replace("rejected.html?roomCode=" + roomCode + "&player=" + nickname + "&level=2");
+				window.location.replace("rejected.html?roomCode=" + roomCode + "&player=" + nickname + "&level=6");
 			} 
 		}, 1000);
 		const interval3 = setInterval(async () => {
@@ -569,7 +569,7 @@ getPlayersByRoom().then(async players => {
   {
     confermaButton.style.visibility = 'visible';
     const title2 = document.querySelector('h2');
-    title2.textContent = "Scegli 2 persone da mandare in missione."
+    title2.textContent = "Scegli 4 persone da mandare in missione."
     playersData.forEach(player => {
       const li = document.createElement('li');
       li.textContent = player.name;
@@ -579,15 +579,15 @@ getPlayersByRoom().then(async players => {
               missionPlayers = missionPlayers.filter(p => p !== player.name);
               li.classList.remove('selected');
             } else {
-              if (missionPlayers.length < 2) { // puoi cambiare "2" per altre missioni
+              if (missionPlayers.length < 4) { // puoi cambiare "4" per altre missioni
                 missionPlayers.push(player.name);
                 li.classList.add('selected');
               } else {
-                alert('Puoi selezionare solo 2 persone per questa missione!');
+                alert('Puoi selezionare solo 4 persone per questa missione!');
               }
             }
-	        missionPlayers.sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }));
-            confermaButton.disabled = missionPlayers.length != 2;
+			missionPlayers.sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }));
+            confermaButton.disabled = missionPlayers.length != 4;
             console.log("Giocatori selezionati:", missionPlayers);
           });
 

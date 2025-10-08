@@ -31,6 +31,7 @@
   const params = new URLSearchParams(window.location.search);
   const roomCode = params.get('roomCode');
   const nickname = params.get('player');
+  let stop = 0;
 
   const title = document.querySelector('h1');
   if (roomCode) {
