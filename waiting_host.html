@@ -47,7 +47,8 @@
     const { data, error } = await supabase
       .from('players')
       .select('*')
-      .eq('room', roomCode);
+      .eq('room', roomCode)
+	  .order('name');
 
     if (error) {
       console.error('Errore nel recupero dei giocatori:', error);
