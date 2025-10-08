@@ -172,7 +172,7 @@ async function checkPlayersStatus() {
     const { data, error } = await supabase
       .from('players')
       .select('name')
-      .eq('status', 'selected')
+      .eq(mission, true)
       .eq('room', roomCode)
 	  .order('name');
 
@@ -633,7 +633,7 @@ async function setStatusSelected(roomCode, missionPlayers) {
   try {
     const { data, error } = await supabase
       .from('players')
-      .update({ status: 'selected' })       // aggiorna lo status
+      .update({ mission: true })       // aggiorna lo status
       .eq('room', roomCode)                 // filtra per stanza
       .in('name', missionPlayers)           // filtra per i giocatori selezionati
       .select();

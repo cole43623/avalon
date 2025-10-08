@@ -65,7 +65,10 @@ async function setStatusTrue(roomCode, nickname) {
   try {
     const { data, error } = await supabase
       .from('players')
-      .update({ status: 'true' })    // aggiorna status
+	  .update({
+		status: 'true', 
+		mission: false    // entrambi gli aggiornamenti insieme
+	  })
       .eq('room', roomCode)          // filtra per room
       .eq('name', nickname)          // filtra per nickname
       .limit(1)                     // opzionale: assicura massimo un record
@@ -86,15 +89,17 @@ async function setStatusTrue(roomCode, nickname) {
   }
 }
 
+let updated;
+
 (async () => {
   const votes = await getRoomVotes();
   const title = document.querySelector('h1');
+  updated = await setStatusTrue(roomCode, nickname);
   title.textContent = 'Missione rifiutata con ' + votes[1] + ' voti contrari e ' + votes[0] + ' voti favorevoli.';
 })();
 
 confermaButton.addEventListener('click', async function() {
 
-    const updated = await setStatusTrue(roomCode, nickname);
     if (updated) {
       window.location.replace("game" + level + ".html?roomCode=" + roomCode + "&player=" + nickname);
     } else {
