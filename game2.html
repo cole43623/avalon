@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
   <!-- Includi Supabase via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="variabili.js"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
 
@@ -590,7 +591,7 @@ getPlayersByRoom().then(async players => {
   {
     confermaButton.style.visibility = 'visible';
     const title2 = document.querySelector('h2');
-    title2.textContent = "Scegli 2 persone da mandare in missione."
+    title2.textContent = "Scegli" + nec[playersData.length][level] + "persone da mandare in missione."
     playersData.forEach(player => {
       const li = document.createElement('li');
       li.textContent = player.name;
@@ -600,15 +601,15 @@ getPlayersByRoom().then(async players => {
               missionPlayers = missionPlayers.filter(p => p !== player.name);
               li.classList.remove('selected');
             } else {
-              if (missionPlayers.length < 2) { // puoi cambiare "2" per altre missioni
+              if (missionPlayers.length < nec[playersData.length][level]) {
                 missionPlayers.push(player.name);
                 li.classList.add('selected');
               } else {
-                alert('Puoi selezionare solo 2 persone per questa missione!');
+                alert('Puoi selezionare solo ' + nec[playersData.length][level] + ' persone per questa missione!');
               }
             }
 	        missionPlayers.sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }));
-            confermaButton.disabled = missionPlayers.length != 2;
+            confermaButton.disabled = missionPlayers.length != nec[playersData.length][level];
             console.log("Giocatori selezionati:", missionPlayers);
           });
 
