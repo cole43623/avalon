@@ -204,6 +204,7 @@ document.addEventListener('keydown', function(e) {
         // Determina la classe del ruolo
         const roleClass = player.role.toLowerCase().includes('cattivo') || 
                          player.role.toLowerCase().includes('morgana') ||
+						 player.role.toLowerCase().includes('oberon') ||
                          player.role.toLowerCase().includes('mordred') ? 'role-evil' : 'role-good';
         
         playerItem.innerHTML = `

@@ -54,7 +54,7 @@ document.addEventListener('keydown', function(e) {
   const params = new URLSearchParams(window.location.search);
   const roomCode = params.get('roomCode');
   const nickname = params.get('player');
-let playersData = [];
+  let playersData = [];
 
 async function getPlayersByRoom() {
   try {
@@ -75,9 +75,9 @@ async function getPlayersByRoom() {
   }
 }
 
-function getNamesByRole(roleName1, roleName2) {
+function getNamesByRole(roles) {
   return playersData
-    .filter(p => p.role === roleName1 || p.role === roleName2)
+    .filter(p => roles.includes(p.role))
     .map(p => p.name);
 }
 
@@ -88,31 +88,35 @@ getPlayersByRoom().then(players => {
   const title2 = document.querySelector('h2');
   if (role == "Merlino")
   {
-	const list = getNamesByRole("Morgana","cattivo")
+	const list = getNamesByRole(["Morgana", "cattivo", "Oberon"])
 	const listShuffle = [...list].sort(() => Math.random() - 0.5);
 	title2.textContent = "Morgana e i cattivi sono: " + listShuffle.join(", ");
   }
   else if (role == "Percival")
   {
-	const list = getNamesByRole("Morgana","Merlino")
+	const list = getNamesByRole(["Morgana", "Merlino"])
 	const listShuffle = [...list].sort(() => Math.random() - 0.5);
-	title2.textContent = "Morgana e Merlino sono " + listShuffle.join(", ");
+	title2.textContent = "Morgana e Merlino sono: " + listShuffle.join(", ");
   }
     else if (role == "Morgana")
   {
-	const list = getNamesByRole("Mordred","cattivo")
+	const list = getNamesByRole(["Mordred", "cattivo"])
 	const listShuffle = [...list].sort(() => Math.random() - 0.5);
-	title2.textContent = "Gli altri cattivi sono " + listShuffle.join(", ");
+	title2.textContent = "Gli altri cattivi sono: " + listShuffle.join(", ");
   }
     else if (role == "Mordred")
   {
-	const list = getNamesByRole("Morgana","cattivo")
+	const list = getNamesByRole(["Morgana", "cattivo"])
 	const listShuffle = [...list].sort(() => Math.random() - 0.5);
-	title2.textContent = "Gli altri cattivi sono " + listShuffle.join(", ");
+	title2.textContent = "Gli altri cattivi sono: " + listShuffle.join(", ");
+  }
+    else if (role == "Oberon")
+  {
+	title2.textContent = "Sei cattivo ma non sai chi sono gli altri cattivi, e loro non sanno di te.";
   }
     else if (role == "cattivo")
   {
-	const list = getNamesByRole("Morgana","Mordred")
+	const list = getNamesByRole(["Morgana", "Mordred"])
 	const listShuffle = [...list].sort(() => Math.random() - 0.5);
 	title2.textContent = "Gli altri cattivi sono " + listShuffle.join(", ");
   }
@@ -120,7 +124,9 @@ getPlayersByRoom().then(players => {
   {
 	title2.textContent = "GG vinci.";
   }
-  title2.innerHTML += "<br>Il numero di persone necessarie per ogni missione: " + nec[playersData.length].join(", ");
+  title2.innerHTML += "<br>Il numero di persone necessarie per ogni missione: " + nec[playersData.length].join(", ") + ".";
+  if (playersData.length > 6)
+	title2.innerHTML += "<br>Nella quarta missione serviranno 2 fallimenti per farla fallire.";
 });
 
 

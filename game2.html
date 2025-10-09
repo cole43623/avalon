@@ -324,7 +324,7 @@ const { data: updateData, error: updateError } = await supabase
   .from('rooms_id')
   .update({
     votes: [approveCount, rejectCount],
-    results: [...(currentRoom.results || []), rejectCount < 1] // append del nuovo valore
+    results: [...(currentRoom.results || []), rejectCount < (1 + ((playersData.length > 6 && currentRoom.results.length === 3) ? 1 : 0))] // append del nuovo valore
   })
   .eq('room_code', roomCode)
   .select();
