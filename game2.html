@@ -421,6 +421,16 @@ async function playMission()
 		confirmVoteBtn.disabled = true;
 		confirmVoteBtn.textContent = "Voto inviato!";
 		confirmVoteBtn.remove();
+		if (selectedVote === "success")
+			title2.innerHTML = 
+			"Missione approvata con " + votes[0] + " voti favorevoli e " + votes[1] + " voti contrari.<br>" +
+			"Hai votato per far riuscire la missione con " + missionPlayers.join(", ") + ".";
+		else
+			title2.innerHTML = 
+			"Missione approvata con " + votes[0] + " voti favorevoli e " + votes[1] + " voti contrari.<br>" +
+			"Hai votato per far fallire la missione con " + missionPlayers.join(", ") + ".";
+		gold.style.pointerEvents = 'none';
+		bronze.style.pointerEvents = 'none';
 		const success4 = await setStatusVoted(roomCode, nickname, selectedVote);
 		if (missionPlayers[0] === nickname)
 		{
@@ -510,6 +520,12 @@ function voteMission() {
     confirmVoteBtn.disabled = true;
     confirmVoteBtn.textContent = "Voto inviato!";
     confirmVoteBtn.remove();
+	thumbsUp.style.pointerEvents = 'none';
+	thumbsDown.style.pointerEvents = 'none';
+	if (selectedVote === "approve")
+		title2.textContent = "Hai approvato la missione con " + missionPlayers.join(", ") + ".";
+	else
+		title2.textContent = "Hai rifiutato la missione con " + missionPlayers.join(", ") + ".";
     const success2 = await setStatusVoted(roomCode, nickname, selectedVote);
 	if (playersData[0].name === nickname)
 	{
