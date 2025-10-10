@@ -124,7 +124,8 @@ getPlayersByRoom().then(players => {
   {
 	title2.textContent = "GG vinci.";
   }
-  title2.innerHTML += "<br>Il numero di persone necessarie per ogni missione: " + nec[playersData.length].join(", ") + ".";
+  const ruoli = ["Merlino", "Percival", "Morgana", "Mordred", "buono", "buono", "cattivo", "buono", "buono", "Oberon"];
+  title2.innerHTML += ".<br>I personaggi presenti sono: " + ruoli.slice(0, playersData.length).join(", ") + ".<br>Il numero di persone necessarie per ogni missione: " + nec[playersData.length].join(", ") + ".";
   if (playersData.length > 6)
 	title2.innerHTML += "<br>Nella quarta missione serviranno 2 fallimenti per farla fallire.";
 });

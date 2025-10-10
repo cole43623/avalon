@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avalon</title>
+  <!-- Font gotico da Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'MedievalSharp', cursive;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #f0e6d2;
+      min-height: 100vh;
+      padding: 20px;
+	  background: url('background.jpg') no-repeat center center fixed;
+	  background-size: cover;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 30px;
+    }
+
+    .avalon-rules {
+	background-color: rgba(20, 10, 0, 0.85);
+      border: 2px solid rgba(218, 165, 32, 0.5);
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      margin-bottom: 30px;
+    }
+
+    h2 {
+      color: #DAA520;
+      font-size: 2rem;
+      margin-bottom: 20px;
+      text-align: center;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    }
+
+    ul {
+      list-style-position: inside;
+      margin-bottom: 30px;
+    }
+
+    li {
+      margin-bottom: 15px;
+      font-size: 1.1rem;
+      line-height: 1.6;
+    }
+
+    li ul {
+      margin-left: 30px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+    }
+
+    li ul li {
+      font-size: 1rem;
+    }
+
+    strong {
+      color: #DAA520;
+      font-weight: bold;
+    }
+
+    table {
+      width: 100%;
+      max-width: 900px;
+      margin: 20px auto;
+      border-collapse: collapse;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    thead {
+      background: rgba(218, 165, 32, 0.3);
+    }
+
+    th {
+      padding: 18px 15px;
+      text-align: center;
+      font-size: 1.2rem;
+      color: #DAA520;
+      border: 1px solid rgba(218, 165, 32, 0.4);
+      font-weight: bold;
+    }
+
+    td {
+      padding: 18px 15px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      font-size: 1.05rem;
+      line-height: 1.5;
+    }
+
+    tbody tr:nth-child(even) {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    tbody tr:hover {
+      background: rgba(218, 165, 32, 0.1);
+      transition: background 0.3s ease;
+    }
+
+    .button {
+      display: block;
+      margin: 20px auto;
+	  width: 200px;
+      padding: 15px 40px;
+      font-size: 1.5rem;
+      color: #f0e6d2;
+      background-color: #6b3e26;
+      border: 2px solid #a67c52;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+	  text-align: center;
+    }
+
+    .button:hover {
+      background-color: #8b5a2b;
+      box-shadow: 0 0 15px #fff;
+      transform: scale(1.1);
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 15px;
+      }
+
+      .avalon-rules {
+        padding: 20px;
+      }
+
+      h2 {
+        font-size: 1.5rem;
+      }
+
+      li {
+        font-size: 1rem;
+      }
+
+      th, td {
+        padding: 12px 8px;
+        font-size: 0.95rem;
+      }
+
+      th {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+<div class="avalon-rules">
+  <h2>REGOLE:</h2>
+  <ul>
+    <li><strong>Squadre:</strong> I giocatori sono divisi in Buoni e Cattivi.</li>
+    <li><strong>Missioni:</strong> Ci sono 5 missioni; il team scelto per ogni missione vota se ha successo o fallisce.
+      <ul>
+        <li>I Buoni votano sempre "Successo".</li>
+        <li>I Cattivi possono scegliere di far fallire la missione.</li>
+      </ul>
+    </li>
+    <li><strong>Vittoria:</strong>
+      <ul>
+        <li>Buoni vincono se 3 missioni hanno successo. A questo punto si passa alla <strong>votazione di Merlino</strong> per indovinare i Cattivi: se Merlino viene scoperto, vincono i Cattivi.</li>
+        <li>Cattivi vincono se 3 missioni falliscono.</li>
+      </ul>
+    </li>
+    <li><strong>Informazioni segrete:</strong> I Cattivi conoscono chi sono gli altri Cattivi (eccetto Oberon). I Buoni devono scoprire chi sono i traditori.</li>
+    <li><strong>Ruolo speciale:</strong> Merlino conosce l'identità dei Cattivi, ma deve restare nascosto; se viene scoperto dai Cattivi alla fine, la squadra dei Cattivi vince comunque.</li>
+  </ul>
+  <h2>Ruoli dei personaggi</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Ruolo</th>
+        <th>Squadra</th>
+        <th>Capacità speciale</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Merlino</td>
+        <td>Buono</td>
+        <td>Sa chi sono i Cattivi, deve restare nascosto</td>
+      </tr>
+      <tr>
+        <td>Percival</td>
+        <td>Buono</td>
+        <td>Sa chi è Merlino e Morgana, ma non chi è chi tra i due</td>
+      </tr>
+      <tr>
+        <td>Morgana</td>
+        <td>Cattivo</td>
+        <td>Può ingannare Percival facendolo credere che sia Merlino</td>
+      </tr>
+      <tr>
+        <td>Mordred</td>
+        <td>Cattivo</td>
+        <td>Merlino non lo vede come cattivo</td>
+      </tr>
+      <tr>
+        <td>Buono</td>
+        <td>Buono</td>
+        <td>Nessuna capacità speciale, deve partecipare alle missioni</td>
+      </tr>
+      <tr>
+        <td>Cattivo</td>
+        <td>Cattivo</td>
+        <td>Nessuna capacità speciale, può sabotare le missioni</td>
+      </tr>
+      <tr>
+        <td>Oberon</td>
+        <td>Cattivo</td>
+        <td>Non sa chi sono gli altri cattivi e loro non sanno chi è lui</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+    <a href="index.html" class="button" id="joinButton">Indietro</a>
+  </div>
+</body>
+</html>

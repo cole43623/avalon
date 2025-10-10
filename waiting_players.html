@@ -73,13 +73,13 @@ document.addEventListener('keydown', function(e) {
       .from('players')
       .select('*')
       .eq('room', roomCode)
-	  .order('name');
+      .order('name');
 
     if (error) {
       console.error('Errore nel recupero dei giocatori:', error);
       return;
     }
-	confermaButton.disabled = data.length < 4;
+    confermaButton.disabled = (data.length < 4 || data.length > 10);
     // Svuota la lista
     playerList.innerHTML = '';
 
