@@ -127,20 +127,32 @@ async function createRoomId(nickname) {
     return null;
 }
 
-    confermaButton.addEventListener('click', function() {
-      const nickname = document.getElementById('nickname').value.trim().toUpperCase();;
+    confermaButton.addEventListener('click', async function() {
+  const nickname = document.getElementById('nickname').value.trim().toUpperCase();
 
-      if(nickname !== "") {
-        createRoomId(nickname).then(roomCode => {
-          if (roomCode) {
-            //alert('Gioco creato con successo! Codice: ' + roomCode);
-            window.location.replace("waiting_players.html?roomCode=" + roomCode+"&player="+nickname);
-          } else { 
-            //alert('Errore nella creazione del gioco. Riprova.');
-          }
-        });
-      } 
-    });
+  if (nickname !== "") {
+    confermaButton.disabled = true;              // ✅ blocca subito il doppio click
+    confermaButton.textContent = "Creazione..."; // opzionale: migliora UX
+
+    try {
+      const roomCode = await createRoomId(nickname); // usa await invece di .then
+
+      if (roomCode) {
+        window.location.replace("waiting_players.html?roomCode=" + roomCode + "&player=" + nickname);
+      } else {
+        alert("Errore nella creazione della stanza. Riprova.");
+        confermaButton.disabled = false;          // riabilita se c’è errore
+        confermaButton.textContent = "Crea partita";
+      }
+
+    } catch (err) {
+      console.error(err);
+      alert("Errore di connessione o di creazione stanza.");
+      confermaButton.disabled = false;
+      confermaButton.textContent = "Crea partita";
+    }
+  }
+});
   </script>
 </body>
 </html>
