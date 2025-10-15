@@ -106,15 +106,24 @@ async function checkRoomExists(roomCode) {
 }
 
 confermaButton.addEventListener('click', async function() {
-  const nickname = document.getElementById('nickname').value.trim().toUpperCase();;
+  const nickname = document.getElementById('nickname').value.trim().toUpperCase();
   const roomid = document.getElementById('roomid').value.trim();
 
   if (nickname !== "" && roomid !== "") {
-    const result = await addPlayer(nickname, roomid); // aspetta che finisca
-    if (result) {
-      window.location.replace("waiting_host.html?roomCode=" + roomid+"&player="+nickname);
-    } else {
-      alert("Errore stanza non trovata.");
+    confermaButton.disabled = true; // Disabilita subito
+
+    try {
+      const result = await addPlayer(nickname, roomid);
+      if (result) {
+        window.location.replace("waiting_host.html?roomCode=" + roomid + "&player=" + nickname);
+      } else {
+        alert("Errore: stanza non trovata.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Errore di rete.");
+    } finally {
+      confermaButton.disabled = false; // Riabilita (in caso di errore o se serve riprovare)
     }
   }
 });
