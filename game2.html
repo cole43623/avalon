@@ -362,8 +362,11 @@ async function getRoomVotes() {
   }
 }
 
+let missionPlayed = false;
 async function playMission()
 {
+  if (missionPlayed) return;
+  missionPlayed = true;
   const playerList = document.getElementById('playerList');
   playerList.innerHTML = '';
 
