@@ -97,7 +97,13 @@ document.addEventListener('keydown', function(e) {
   }
 
   updatePlayers();
-  setInterval(updatePlayers, 1000);
+  supabase
+    .channel('players-room-' + roomCode)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'players', filter: `room=eq.${roomCode}` }, payload => {
+    console.log('Cambio rilevato:', payload);
+    updatePlayers();
+    })
+    .subscribe();
 
 
 async function setStatusTrue(roomCode) {
