@@ -84,26 +84,39 @@
   </div>
 
 <script>
-  const confermaButton = document.getElementById('conferma');
+const confermaButton = document.getElementById('conferma');
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
-        e.preventDefault(); // Previene eventuali comportamenti predefiniti del form
-        confermaButton.click(); // Simula il click sul bottone
+        e.preventDefault();
+        confermaButton.click();
     }
 });
-  
-  const supabaseUrl = 'https://ctnkeyycsbhadytnglbj.supabase.co';
-  const supabaseKey = 'sb_publishable_CEVeeu7p1k-MvdqxIoOZtA_J_M_I79b';
-  const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-  const params = new URLSearchParams(window.location.search);
-  const roomCode = params.get('roomCode');
-  const nickname = params.get('player');
+const supabaseUrl = 'https://ctnkeyycsbhadytnglbj.supabase.co';
+const supabaseKey = 'sb_publishable_CEVeeu7p1k-MvdqxIoOZtA_J_M_I79b';
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+const params = new URLSearchParams(window.location.search);
+const roomCode = params.get('roomCode');
+const nickname = params.get('player');
 let playersData = [];
 let missionPlayers = [];
 
 let round = 0;
 let level = 0;
+
+// ===== VARIABILI GLOBALI PER LE SUBSCRIPTIONS =====
+let roundChangeSub = null;           // Interval 5
+let missionSelectedSub = null;       // Interval 1
+let voteApproveRejectSub = null;     // Interval 2
+let missionStatusSub = null;         // Interval 3
+let missionResultSub = null;         // Interval 4
+
+// ===== FLAG PER EVITARE ESECUZIONI MULTIPLE =====
+let alreadyProcessedMissionSelection = false;
+let alreadyProcessedVoting = false;
+let alreadyProcessedMissionStart = false;
+let alreadyProcessedMissionResult = false;
 
 async function readRound() {
   try {
@@ -114,13 +127,13 @@ async function readRound() {
 
     if (error) {
       console.error('Errore nella query:', error);
-      return 0; // valore di default
+      return 0;
     } else {
       return data[0]?.round || 0;
     }
   } catch (err) {
     console.error('Errore:', err);
-    return 0; // valore di default
+    return 0;
   }
 }
 
@@ -137,7 +150,6 @@ async function setRound() {
       console.error('Errore nella query:', error);
       return 0;
     } else {
-      // Aggiorna anche la variabile globale
       round = newRound;
       return newRound;
     }
@@ -157,14 +169,13 @@ async function getPlayersByRoom() {
 
     if (error) {
       console.error('Errore nella query:', error);
-      playersData = []; // reset globale in caso di errore
+      playersData = [];
     } else {
-      playersData = data; // assegna a variabile globale
-	  
+      playersData = data;
     }
   } catch (err) {
     console.error('Errore:', err);
-    playersData = []; // reset globale in caso di eccezione
+    playersData = [];
   }
 }
 
@@ -177,7 +188,7 @@ async function checkPlayersStatus() {
       .select('name')
       .eq('mission', true)
       .eq('room', roomCode)
-	  .order('name');
+      .order('name');
 
     if (error) {
       console.error('Errore nel recupero dei giocatori:', error);
@@ -185,7 +196,7 @@ async function checkPlayersStatus() {
     }
 
     missionPlayers = data.map(p => p.name);
-	 missionPlayers.sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }));
+    missionPlayers.sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }));
 
     return missionPlayers.length;
   } catch (err) {
@@ -198,9 +209,9 @@ async function setStatusVoted(roomCode, nickname, res) {
   try {
     const { data, error } = await supabase
       .from('players')
-      .update({ status: res })       // aggiorna lo status
-      .eq('room', roomCode)                 // filtra per stanza
-      .eq('name', nickname)           // filtra per il giocatore selezionato
+      .update({ status: res })
+      .eq('room', roomCode)
+      .eq('name', nickname)
       .select();
 
     if (error) throw error;
@@ -235,7 +246,6 @@ async function checkPlayersStatus2() {
 
     if (!data || data.length === 0) return false;
 
-    // Controlla se tutti i giocatori hanno votato (approve o reject)
     const allVoted = data.every(player => player.status === 'approve' || player.status === 'reject');
     if (!allVoted) return false;
 
@@ -245,7 +255,7 @@ async function checkPlayersStatus2() {
     const { data: updateData, error: updateError } = await supabase
       .from('rooms_id')
       .update({ 
-        votes: [approveCount, rejectCount]  // aggiorna l'array di voti
+        votes: [approveCount, rejectCount]
       })
       .eq('room_code', roomCode)
       .select();
@@ -255,7 +265,6 @@ async function checkPlayersStatus2() {
       return false;
     }
 
-    // Restituisce 1 se approvato, 2 se rifiutato
     return approveCount > rejectCount ? 1 : 2;
 
   } catch (err) {
@@ -295,8 +304,7 @@ async function checkPlayersStatus4() {
       .from('players')
       .select('status')
       .eq('room', roomCode)
-	  .in('name', missionPlayers);
-
+      .in('name', missionPlayers);
 
     if (error) {
       console.error('Errore nel recupero dei giocatori:', error);
@@ -312,24 +320,22 @@ async function checkPlayersStatus4() {
     const approveCount = data.filter(player => player.status === 'success').length;
     const rejectCount = data.filter(player => player.status === 'failure').length;
 
-// Prima leggi i dati attuali
-const { data: currentRoom, error: fetchError } = await supabase
-  .from('rooms_id')
-  .select('results')
-  .eq('room_code', roomCode)
-  .single();
+    const { data: currentRoom, error: fetchError } = await supabase
+      .from('rooms_id')
+      .select('results')
+      .eq('room_code', roomCode)
+      .single();
 
-if (fetchError) throw fetchError;
+    if (fetchError) throw fetchError;
 
-// Poi aggiorna con il nuovo array
-const { data: updateData, error: updateError } = await supabase
-  .from('rooms_id')
-  .update({
-    votes: [approveCount, rejectCount],
-    results: [...(currentRoom.results || []), rejectCount < (1 + ((playersData.length > 6 && currentRoom.results.length === 3) ? 1 : 0))] // append del nuovo valore
-  })
-  .eq('room_code', roomCode)
-  .select();
+    const { data: updateData, error: updateError } = await supabase
+      .from('rooms_id')
+      .update({
+        votes: [approveCount, rejectCount],
+        results: [...(currentRoom.results || []), rejectCount < (1 + ((playersData.length > 6 && currentRoom.results.length === 3) ? 1 : 0))]
+      })
+      .eq('room_code', roomCode)
+      .select();
 
     return true;
 
@@ -345,16 +351,16 @@ async function getRoomVotes() {
   try {
     const { data, error } = await supabase
       .from('rooms_id')
-      .select('votes')  // seleziona solo la colonna votes
+      .select('votes')
       .eq('room_code', roomCode)
-      .single();  // restituisce un singolo record
+      .single();
 
     if (error) {
       console.error('Errore nel recupero dei voti:', error);
       return null;
     }
 
-    return data?.votes || null;  // restituisce l'array [approveCount, rejectCount]
+    return data?.votes || null;
 
   } catch (err) {
     console.error('Errore nella funzione getRoomVotes:', err);
@@ -372,101 +378,129 @@ async function playMission()
 
   const title2 = document.querySelector('h2');
   const votes = await getRoomVotes();
+  
   if (missionPlayers.includes(nickname))
   {
     title2.innerHTML = 
-	"Missione approvata con " + votes[0] + " voti favorevoli e " + votes[1] + " voti contrari.<br>" +
-	"Vuoi far fallire la missione con " + missionPlayers.join(", ") + "?";
-     // Crea contenitore delle immagini di voto
-	  const voteContainer = document.createElement('div');
-	  voteContainer.style.display = 'flex';
-	  voteContainer.style.justifyContent = 'center';
-	  voteContainer.style.gap = '50px';
-	  voteContainer.style.marginTop = '30px';
+    "Missione approvata con " + votes[0] + " voti favorevoli e " + votes[1] + " voti contrari.<br>" +
+    "Vuoi far fallire la missione con " + missionPlayers.join(", ") + "?";
+    
+    const voteContainer = document.createElement('div');
+    voteContainer.style.display = 'flex';
+    voteContainer.style.justifyContent = 'center';
+    voteContainer.style.gap = '50px';
+    voteContainer.style.marginTop = '30px';
 
-	  // Immagini locali
-	  const gold = document.createElement('img');
-	  gold.src = 'gold.png';  // percorso locale
-	  gold.alt = 'Approva';
-	  gold.classList.add('vote-icon');
+    const gold = document.createElement('img');
+    gold.src = 'gold.png';
+    gold.alt = 'Approva';
+    gold.classList.add('vote-icon');
 
-	  const bronze = document.createElement('img');
-	  bronze.src = 'bronze.png';  // percorso locale
-	  bronze.alt = 'Rifiuta';
-	  bronze.classList.add('vote-icon');
+    const bronze = document.createElement('img');
+    bronze.src = 'bronze.png';
+    bronze.alt = 'Rifiuta';
+    bronze.classList.add('vote-icon');
 
-	  // Aggiungi immagini al container
-	  voteContainer.appendChild(gold);
-	  voteContainer.appendChild(bronze);
-	  playerList.appendChild(voteContainer);
+    voteContainer.appendChild(gold);
+    voteContainer.appendChild(bronze);
+    playerList.appendChild(voteContainer);
 
-	  // Bottone di conferma voto
-	  const confirmVoteBtn = document.createElement('button');
-	  confirmVoteBtn.textContent = "Conferma voto";
-	  confirmVoteBtn.classList.add('button');
-	  confirmVoteBtn.disabled = true;
-	  confirmVoteBtn.style.marginTop = '30px';
-	  playerList.appendChild(confirmVoteBtn);
+    const confirmVoteBtn = document.createElement('button');
+    confirmVoteBtn.textContent = "Conferma voto";
+    confirmVoteBtn.classList.add('button');
+    confirmVoteBtn.disabled = true;
+    confirmVoteBtn.style.marginTop = '30px';
+    playerList.appendChild(confirmVoteBtn);
 
-	  // Logica selezione
-	  let selectedVote = null;
-	  [gold, bronze].forEach(img => {
-		img.addEventListener('click', () => {
-		  // Deseleziona entrambi
-		  gold.classList.remove('selected-vote');
-		  bronze.classList.remove('selected-vote');
-		  // Seleziona quello cliccato
-		  img.classList.add('selected-vote');
-		  selectedVote = img === gold ? 'success' : 'failure';
-		  confirmVoteBtn.disabled = false;
-		});
-	  });
-	  confirmVoteBtn.addEventListener('click', async () => {
-		console.log("Hai votato:", selectedVote);
-		confirmVoteBtn.disabled = true;
-		confirmVoteBtn.textContent = "Voto inviato!";
-		confirmVoteBtn.remove();
-		if (selectedVote === "success")
-			title2.innerHTML = 
-			"Missione approvata con " + votes[0] + " voti favorevoli e " + votes[1] + " voti contrari.<br>" +
-			"Hai votato per far riuscire la missione con " + missionPlayers.join(", ") + ".";
-		else
-			title2.innerHTML = 
-			"Missione approvata con " + votes[0] + " voti favorevoli e " + votes[1] + " voti contrari.<br>" +
-			"Hai votato per far fallire la missione con " + missionPlayers.join(", ") + ".";
-		gold.style.pointerEvents = 'none';
-		bronze.style.pointerEvents = 'none';
-		const success4 = await setStatusVoted(roomCode, nickname, selectedVote);
-		if (missionPlayers[0] === nickname)
-		{
-			const interval4 = setInterval(async () => {
-				const result4 = await checkPlayersStatus4();
-				if (result4) {
-					clearInterval(interval4);
-					const check2 = await setRound();
-					window.location.replace("result.html?roomCode=" + roomCode + "&player=" + nickname);
-				} 
-			}, 1000);
-		}
-		
-	  });
-	  
+    let selectedVote = null;
+    [gold, bronze].forEach(img => {
+      img.addEventListener('click', () => {
+        gold.classList.remove('selected-vote');
+        bronze.classList.remove('selected-vote');
+        img.classList.add('selected-vote');
+        selectedVote = img === gold ? 'success' : 'failure';
+        confirmVoteBtn.disabled = false;
+      });
+    });
+    
+    confirmVoteBtn.addEventListener('click', async () => {
+      console.log("Hai votato:", selectedVote);
+      confirmVoteBtn.disabled = true;
+      confirmVoteBtn.textContent = "Voto inviato!";
+      confirmVoteBtn.remove();
+      
+      if (selectedVote === "success")
+        title2.innerHTML = 
+        "Missione approvata con " + votes[0] + " voti favorevoli e " + votes[1] + " voti contrari.<br>" +
+        "Hai votato per far riuscire la missione con " + missionPlayers.join(", ") + ".";
+      else
+        title2.innerHTML = 
+        "Missione approvata con " + votes[0] + " voti favorevoli e " + votes[1] + " voti contrari.<br>" +
+        "Hai votato per far fallire la missione con " + missionPlayers.join(", ") + ".";
+      
+      gold.style.pointerEvents = 'none';
+      bronze.style.pointerEvents = 'none';
+      
+      const success4 = await setStatusVoted(roomCode, nickname, selectedVote);
+      
+      if (missionPlayers[0] === nickname)
+      {
+        async function checkAndProceedMissionResult() {
+          if (alreadyProcessedMissionResult) return;
+          
+          const result4 = await checkPlayersStatus4();
+          if (result4) {
+            alreadyProcessedMissionResult = true;
+            
+            if (missionResultSub) {
+              await supabase.removeChannel(missionResultSub);
+              missionResultSub = null;
+            }
+            
+            if (roundChangeSub) {
+              await supabase.removeChannel(roundChangeSub);
+              roundChangeSub = null;
+            }
+            
+            const check2 = await setRound();
+            window.location.replace("result.html?roomCode=" + roomCode + "&player=" + nickname);
+          }
+        }
+
+        missionResultSub = supabase
+          .channel('mission-result-' + roomCode)
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'players',
+              filter: `room=eq.${roomCode}`
+            },
+            async (payload) => {
+
+              if (payload.new.status === 'success' || payload.new.status === 'failure') {
+                await checkAndProceedMissionResult();
+              }
+            }
+          )
+          .subscribe((status) => {
+
+            if (status === 'SUBSCRIBED') {
+              checkAndProceedMissionResult();
+            }
+          });
+      }
+    });
   }
   else
   {
     title2.innerHTML = 
-  "Missione approvata con " + votes[0] + " voti favorevoli e " + votes[1] + " voti contrari.<br>" +
-  "Aspetta che " + missionPlayers.join(", ") + " facciano la missione.";
+    "Missione approvata con " + votes[0] + " voti favorevoli e " + votes[1] + " voti contrari.<br>" +
+    "Aspetta che " + missionPlayers.join(", ") + " facciano la missione.";
   }
-	const interval5 = setInterval(async () => {
-		const result5 = await readRound();
-		if (result5 != round) {
-			clearInterval(interval5);
-			window.location.replace("result.html?roomCode=" + roomCode + "&player=" + nickname);
-		} 
-	}, 1000);
-}
 
+}
 
 function voteMission() {
   const playerList = document.getElementById('playerList');
@@ -475,30 +509,26 @@ function voteMission() {
   const title2 = document.querySelector('h2');
   title2.textContent = "Vuoi approvare la missione con " + missionPlayers.join(", ") + "?";
 
-  // Crea contenitore delle immagini di voto
   const voteContainer = document.createElement('div');
   voteContainer.style.display = 'flex';
   voteContainer.style.justifyContent = 'center';
   voteContainer.style.gap = '50px';
   voteContainer.style.marginTop = '30px';
 
-  // Immagini locali
   const thumbsUp = document.createElement('img');
-  thumbsUp.src = 'thumbsup.png';  // percorso locale
+  thumbsUp.src = 'thumbsup.png';
   thumbsUp.alt = 'Approva';
   thumbsUp.classList.add('vote-icon');
 
   const thumbsDown = document.createElement('img');
-  thumbsDown.src = 'thumbsdown.png';  // percorso locale
+  thumbsDown.src = 'thumbsdown.png';
   thumbsDown.alt = 'Rifiuta';
   thumbsDown.classList.add('vote-icon');
 
-  // Aggiungi immagini al container
   voteContainer.appendChild(thumbsUp);
   voteContainer.appendChild(thumbsDown);
   playerList.appendChild(voteContainer);
 
-  // Bottone di conferma voto
   const confirmVoteBtn = document.createElement('button');
   confirmVoteBtn.textContent = "Conferma voto";
   confirmVoteBtn.classList.add('button');
@@ -506,14 +536,11 @@ function voteMission() {
   confirmVoteBtn.style.marginTop = '30px';
   playerList.appendChild(confirmVoteBtn);
 
-  // Logica selezione
   let selectedVote = null;
   [thumbsUp, thumbsDown].forEach(img => {
     img.addEventListener('click', () => {
-      // Deseleziona entrambi
       thumbsUp.classList.remove('selected-vote');
       thumbsDown.classList.remove('selected-vote');
-      // Seleziona quello cliccato
       img.classList.add('selected-vote');
       selectedVote = img === thumbsUp ? 'approve' : 'reject';
       confirmVoteBtn.disabled = false;
@@ -525,60 +552,123 @@ function voteMission() {
     confirmVoteBtn.disabled = true;
     confirmVoteBtn.textContent = "Voto inviato!";
     confirmVoteBtn.remove();
-	thumbsUp.style.pointerEvents = 'none';
-	thumbsDown.style.pointerEvents = 'none';
-	if (selectedVote === "approve")
-		title2.textContent = "Hai approvato la missione con " + missionPlayers.join(", ") + ".";
-	else
-		title2.textContent = "Hai rifiutato la missione con " + missionPlayers.join(", ") + ".";
+    thumbsUp.style.pointerEvents = 'none';
+    thumbsDown.style.pointerEvents = 'none';
+    
+    if (selectedVote === "approve")
+      title2.textContent = "Hai approvato la missione con " + missionPlayers.join(", ") + ".";
+    else
+      title2.textContent = "Hai rifiutato la missione con " + missionPlayers.join(", ") + ".";
+    
     const success2 = await setStatusVoted(roomCode, nickname, selectedVote);
-	if (playersData[0].name === nickname)
-	{
-		const interval2 = setInterval(async () => {
-			const result = await checkPlayersStatus2();
-			if (result) {
-				clearInterval(interval2);
-				if (result == 1)
-				{
-				  console.log("votato sì");
-				  setStatusVoted(roomCode, nickname, 'mission');
-				  voteContainer.remove();
-				  thumbsUp.remove();
-				  thumbsDown.remove();
-				  playMission();
-				}
-				else
-				{
-				  console.log("votato no");
-				  const check2 = await setRound();
-				  window.location.replace("rejected.html?roomCode=" + roomCode + "&player=" + nickname);
-				}
-			} 
-		}, 1000);
-	}
-	else
-	{
-		const interval2 = setInterval(async () => {
-			const result2 = await readRound();
-			if (result2 != round) {
-				window.location.replace("rejected.html?roomCode=" + roomCode + "&player=" + nickname);
-			} 
-		}, 1000);
-		const interval3 = setInterval(async () => {
-			const result3 = await checkPlayersStatus3();
-			if (result3)
-			{
-			  console.log("votato sì");
-			  voteContainer.remove();
-			  thumbsUp.remove();
-			  thumbsDown.remove();
-			  clearInterval(interval2);
-			  clearInterval(interval3);
-			  playMission();
-			}
-		}, 1000);
-	}
-	
+    
+    if (playersData[0].name === nickname)
+    {
+      async function checkAndProceedVoting() {
+        if (alreadyProcessedVoting) return;
+        
+        const result = await checkPlayersStatus2();
+        if (result) {
+          alreadyProcessedVoting = true;
+          
+          if (voteApproveRejectSub) {
+            await supabase.removeChannel(voteApproveRejectSub);
+            voteApproveRejectSub = null;
+          }
+          
+          if (result == 1)
+          {
+            console.log("votato sì");
+            setStatusVoted(roomCode, nickname, 'mission');
+            voteContainer.remove();
+            thumbsUp.remove();
+            thumbsDown.remove();
+            playMission();
+          }
+          else
+          {
+            console.log("votato no");
+            
+            if (roundChangeSub) {
+              await supabase.removeChannel(roundChangeSub);
+              roundChangeSub = null;
+            }
+            
+            const check2 = await setRound();
+            window.location.replace("rejected.html?roomCode=" + roomCode + "&player=" + nickname);
+          }
+        }
+      }
+
+      voteApproveRejectSub = supabase
+        .channel('vote-approve-reject-' + roomCode)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'players',
+            filter: `room=eq.${roomCode}`
+          },
+          async (payload) => {
+            if (payload.new.status === 'approve' || payload.new.status === 'reject') {
+              await checkAndProceedVoting();
+            }
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            checkAndProceedVoting();
+          }
+        });
+    }
+    else
+    {
+      async function checkAndProceedMissionStart() {
+        if (alreadyProcessedMissionStart) return;
+        
+        const result3 = await checkPlayersStatus3();
+        if (result3)
+        {
+          console.log("votato sì");
+          alreadyProcessedMissionStart = true;
+          
+          if (missionStatusSub) {
+            await supabase.removeChannel(missionStatusSub);
+            missionStatusSub = null;
+          }
+          
+          voteContainer.remove();
+          thumbsUp.remove();
+          thumbsDown.remove();
+          playMission();
+        }
+      }
+
+      missionStatusSub = supabase
+        .channel('mission-status-' + roomCode)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'players',
+            filter: `room=eq.${roomCode}`
+          },
+          async (payload) => {
+    
+            if (payload.new.status === 'mission') {
+              await checkAndProceedMissionStart();
+            }
+          }
+        )
+        .subscribe((status) => {
+
+          if (status === 'SUBSCRIBED') {
+            checkAndProceedMissionStart();
+          }
+        });
+    }
   });
 }
 
@@ -591,105 +681,137 @@ async function readLevel() {
 
     if (error) {
       console.error('Errore nella query:', error);
-      return 0; // valore di default
+      return 0;
     } else {
       return data[0]?.results.length || 0;
     }
   } catch (err) {
     console.error('Errore:', err);
-    return 0; // valore di default
+    return 0;
   }
+}
+
+async function setupRoundChangeSubscription() {
+  roundChangeSub = supabase
+    .channel('round-change-' + roomCode)
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'rooms_id',
+        filter: `room_code=eq.${roomCode}`
+      },
+      async (payload) => {
+        const newRound = payload.new.round;
+        if (newRound !== round) {
+          console.log('Round cambiato da', round, 'a', newRound);
+          
+          if (missionSelectedSub) await supabase.removeChannel(missionSelectedSub);
+          if (voteApproveRejectSub) await supabase.removeChannel(voteApproveRejectSub);
+          if (missionStatusSub) await supabase.removeChannel(missionStatusSub);
+          if (missionResultSub) await supabase.removeChannel(missionResultSub);
+          if (roundChangeSub) await supabase.removeChannel(roundChangeSub);
+          
+          if (payload.new.results && payload.new.results.length > level) {
+            window.location.replace("result.html?roomCode=" + roomCode + "&player=" + nickname);
+          } else {
+            window.location.replace("rejected.html?roomCode=" + roomCode + "&player=" + nickname);
+          }
+        }
+      }
+    )
+    .subscribe((status) => {;
+    });
 }
 
 getPlayersByRoom().then(async players => {
   round = await readRound();
   level = await readLevel();
-  console.log(level);
+  console.log('Level attuale:', level);
+  
+  await setupRoundChangeSubscription();
+  
   const role = playersData.find(p => p.name === nickname)?.role;
   const title = document.querySelector('h1');
   title.textContent = nickname + " sei " + role;
+  
   if (playersData[round].name === nickname)
   {
+    // SEI IL LEADER
     confermaButton.style.visibility = 'visible';
     const title2 = document.querySelector('h2');
     title2.textContent = "Scegli " + nec[playersData.length][level] + " persone da mandare in missione."
+    
     playersData.forEach(player => {
       const li = document.createElement('li');
       li.textContent = player.name;
       li.classList.add('player-item');
-          li.addEventListener('click', () => {
-            if (missionPlayers.includes(player.name)) {
-              missionPlayers = missionPlayers.filter(p => p !== player.name);
-              li.classList.remove('selected');
-            } else {
-              if (missionPlayers.length < nec[playersData.length][level]) {
-                missionPlayers.push(player.name);
-                li.classList.add('selected');
-              } else {
-                alert('Puoi selezionare solo ' + nec[playersData.length][level] + ' persone per questa missione!');
-              }
-            }
-	        missionPlayers.sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }));
-            confermaButton.disabled = missionPlayers.length != nec[playersData.length][level];
-            console.log("Giocatori selezionati:", missionPlayers);
-          });
+      
+      li.addEventListener('click', () => {
+        if (missionPlayers.includes(player.name)) {
+          missionPlayers = missionPlayers.filter(p => p !== player.name);
+          li.classList.remove('selected');
+        } else {
+          if (missionPlayers.length < nec[playersData.length][level]) {
+            missionPlayers.push(player.name);
+            li.classList.add('selected');
+          } else {
+            alert('Puoi selezionare solo ' + nec[playersData.length][level] + ' persone per questa missione!');
+          }
+        }
+        missionPlayers.sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }));
+        confermaButton.disabled = missionPlayers.length != nec[playersData.length][level];
+        console.log("Giocatori selezionati:", missionPlayers);
+      });
 
-          playerList.appendChild(li);
-        });
+      playerList.appendChild(li);
+    });
   }
   else
   {
-      const title2 = document.querySelector('h2');
-      title2.textContent = "Aspetta che " + playersData[round].name + " scelga " + nec[playersData.length][level] + " giocatori da mandare in missione.";
+    // NON SEI IL LEADER
+    const title2 = document.querySelector('h2');
+    title2.textContent = "Aspetta che " + playersData[round].name + " scelga " + nec[playersData.length][level] + " giocatori da mandare in missione.";
+    async function checkAndProceedMissionSelection() {
+      if (alreadyProcessedMissionSelection) return;
       
-      // ===== NUOVO CODICE REALTIME =====
-      let missionSelectedSub = null;
-      let alreadyProcessed = false;
-
-      async function checkAndProceed() {
-          if (alreadyProcessed) return;
-          
-          const count = await checkPlayersStatus();
-          if (count > 0) {
-              console.log("Giocatori selezionati:", missionPlayers);
-              alreadyProcessed = true;
-              
-              // Pulisci la subscription
-              if (missionSelectedSub) {
-                  await supabase.removeChannel(missionSelectedSub);
-                  missionSelectedSub = null;
-              }
-              
-              voteMission();
-          }
+      const count = await checkPlayersStatus();
+      if (count > 0) {
+        console.log("Giocatori selezionati:", missionPlayers);
+        alreadyProcessedMissionSelection = true;
+        
+        // Pulisci subscription
+        if (missionSelectedSub) {
+          await supabase.removeChannel(missionSelectedSub);
+          missionSelectedSub = null;
+        }
+        
+        voteMission();
       }
+    }
 
-      // Crea la subscription
-      missionSelectedSub = supabase
-          .channel('mission-selection-' + roomCode)
-          .on(
-              'postgres_changes',
-              {
-                  event: 'UPDATE',
-                  schema: 'public',
-                  table: 'players',
-                  filter: `room=eq.${roomCode}`
-              },
-              async (payload) => {
-                  console.log('🔔 Ricevuto update player:', payload);
-                  if (payload.new.mission === true) {
-                      await checkAndProceed();
-                  }
-              }
-          )
-          .subscribe((status) => {
-              console.log('📡 Subscription status:', status);
-              if (status === 'SUBSCRIBED') {
-                  console.log('✅ Realtime attivo, controllo iniziale...');
-                  checkAndProceed();
-              }
-          });
-      // ===== FINE NUOVO CODICE =====
+    missionSelectedSub = supabase
+      .channel('mission-selection-' + roomCode)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'players',
+          filter: `room=eq.${roomCode}`
+        },
+        async (payload) => {
+          if (payload.new.mission === true) {
+            await checkAndProceedMissionSelection();
+          }
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          checkAndProceedMissionSelection();
+        }
+      });
   }
 });
 
@@ -697,9 +819,9 @@ async function setStatusSelected(roomCode, missionPlayers) {
   try {
     const { data, error } = await supabase
       .from('players')
-      .update({ mission: true })       // aggiorna lo status
-      .eq('room', roomCode)                 // filtra per stanza
-      .in('name', missionPlayers)           // filtra per i giocatori selezionati
+      .update({ mission: true })
+      .eq('room', roomCode)
+      .in('name', missionPlayers)
       .select();
 
     if (error) throw error;
@@ -716,7 +838,6 @@ async function setStatusSelected(roomCode, missionPlayers) {
     return null;
   }
 }
-
 
 confermaButton.addEventListener('click', async () => {
   console.log("Missione confermata con i giocatori:", missionPlayers);

@@ -123,35 +123,34 @@ async function getPlayersByRoom() {
   }
 }
 
-async function checkPlayersStatus() {
-  if (!roomCode) return 0;
+function setupRealtimeStatusListener() {
+  if (!roomCode) return;
 
-  try {
-    const { data, error } = await supabase
-      .from('players')
-      .select('name, status')
-      .eq('room', roomCode)
-      .eq('role', 'Morgana')
-      .single();
+  supabase
+    .channel("guess-status-" + roomCode)
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "players",
+        filter: `room=eq.${roomCode}`
+      },
+      async (payload) => {
+        const updated = payload.new;
 
-    if (error) {
-      console.error('Errore nel recupero dei giocatori:', error);
-      return 0;
-    }
+        if (updated.role !== "Morgana") return;
 
-    if (data.status === 'Merlino') {
-      return 2; // Morgana ha indovinato Merlino (cattivi vincono)
-    } else if (data.status === 'non_merlino') {
-      return 1; // Morgana ha sbagliato (buoni vincono)
-    }
-
-    return 0; // Non ha ancora scelto
-
-  } catch (err) {
-    console.error('Errore nella funzione checkPlayersStatus:', err);
-    return 0;
-  }
+        if (updated.status === "Merlino") {
+          window.location.replace("badending.html?roomCode=" + roomCode + "&player=" + nickname);
+        } else if (updated.status === "non_merlino") {
+          window.location.replace("goodending.html?roomCode=" + roomCode + "&player=" + nickname);
+        }
+      }
+    )
+    .subscribe();
 }
+
 
 async function setStatusVoted(roomCode, nickname, res) {
   try {
@@ -217,17 +216,7 @@ getPlayersByRoom().then(async players => {
     const morganaPlayer = playersData.find(p => p.role === "Morgana");
     title2.textContent = "Aspetta che " + (morganaPlayer?.name || "Morgana") + " scelga chi è Merlino.";
     
-    const interval = setInterval(async () => {
-      const count = await checkPlayersStatus();
-      if (count) {
-        clearInterval(interval);
-        if (count === 1) {
-          window.location.replace("goodending.html?roomCode=" + roomCode + "&player=" + nickname);
-        } else {
-          window.location.replace("badending.html?roomCode=" + roomCode + "&player=" + nickname);
-        }
-      }
-    }, 1000);
+    setupRealtimeStatusListener();
   }
 });
 

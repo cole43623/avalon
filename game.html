@@ -42,8 +42,8 @@
   const confermaButton = document.getElementById('conferma');
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
-        e.preventDefault(); // Previene eventuali comportamenti predefiniti del form
-        confermaButton.click(); // Simula il click sul bottone
+        e.preventDefault();
+        confermaButton.click(); 
     }
 });
   
@@ -83,9 +83,12 @@ function getNamesByRole(roles) {
 
 getPlayersByRoom().then(players => {
   const role = playersData.find(p => p.name === nickname)?.role;
+
   const title = document.querySelector('h1');
-  title.textContent = nickname + " sei " + role;
   const title2 = document.querySelector('h2');
+
+  title.textContent = nickname + " sei " + role;
+
   if (role == "Merlino")
   {
 	const list = getNamesByRole(["Morgana", "cattivo", "Oberon"])
@@ -127,13 +130,11 @@ getPlayersByRoom().then(players => {
   const ruoli = ["Merlino", "Percival", "Morgana", "Mordred", "buono", "buono", "cattivo", "buono", "buono", "Oberon"];
   title2.innerHTML += ".<br>I personaggi presenti sono: " + ruoli.slice(0, playersData.length).join(", ") + ".<br>Il numero di persone necessarie per ogni missione: " + nec[playersData.length].join(", ") + ".";
   if (playersData.length > 6)
-	title2.innerHTML += "<br>Nella quarta missione serviranno 2 fallimenti per farla fallire.";
+	  title2.innerHTML += "<br>Nella quarta missione serviranno 2 fallimenti per farla fallire.";
 });
 
 
-async function checkPlayersStatus() {
-  if (!roomCode) return;
-
+async function checkAllPlayersTrue() {
   try {
     const { data, error } = await supabase
       .from('players')
@@ -151,22 +152,36 @@ async function checkPlayersStatus() {
       window.location.replace("game2.html?roomCode=" + roomCode + "&player=" + nickname);
     }
   } catch (err) {
-    console.error('Errore nella funzione checkPlayersStatus:', err);
+    console.error('Errore nella funzione checkAllPlayersTrue:', err);
   }
 }
 
 
-
-
+let playersStatusSub = supabase
+  .channel('players-status-' + roomCode)
+  .on(
+    'postgres_changes',
+    {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'players',
+      filter: `room=eq.${roomCode}`
+    },
+    async (payload) => {
+      console.log("Update realtime:", payload);
+      checkAllPlayersTrue();
+    }
+  )
+  .subscribe();
 
 async function setStatusTrue(roomCode, nickname) {
   try {
     const { data, error } = await supabase
       .from('players')
-      .update({ status: 'true' })    // aggiorna status
-      .eq('room', roomCode)          // filtra per room
-      .eq('name', nickname)          // filtra per nickname
-      .limit(1)                     // opzionale: assicura massimo un record
+      .update({ status: 'true' })
+      .eq('room', roomCode)
+      .eq('name', nickname)
+      .limit(1)
       .select();
 
     if (error) throw error;
@@ -177,15 +192,13 @@ async function setStatusTrue(roomCode, nickname) {
     }
 
     console.log("Status aggiornato a TRUE per il player:", nickname);
-	setInterval(checkPlayersStatus, 1000);
-	confermaButton.disabled = true;
+    confermaButton.disabled = true;
     return true;
   } catch (err) {
     console.error("Errore aggiornando lo status:", err);
     return null;
   }
 }
-
 
 confermaButton.addEventListener('click', async function() {
 

@@ -89,14 +89,13 @@ async function checkRoomExists(roomCode) {
 
     return data && data.length > 0;
 }
-    // Funzione principale
     async function addPlayer(nickname, roomid) {
         try {
             const roomExists = await checkRoomExists(roomid);
             
             if (roomExists) {
                 await createPlayer(nickname, roomid);
-                return roomid; // Restituisci il room code creato
+                return roomid;
             }
         } catch (error) {
             console.error('Errore la stanza non esiste:', error);
@@ -110,7 +109,7 @@ confermaButton.addEventListener('click', async function() {
   const roomid = document.getElementById('roomid').value.trim();
 
   if (nickname !== "" && roomid !== "") {
-    confermaButton.disabled = true; // Disabilita subito
+    confermaButton.disabled = true;
 
     try {
       const result = await addPlayer(nickname, roomid);
@@ -123,7 +122,7 @@ confermaButton.addEventListener('click', async function() {
       console.error(err);
       alert("Errore di rete.");
     } finally {
-      confermaButton.disabled = false; // Riabilita (in caso di errore o se serve riprovare)
+      confermaButton.disabled = false;
     }
   }
 });
