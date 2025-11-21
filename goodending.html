@@ -160,33 +160,33 @@ document.addEventListener('keydown', function(e) {
     const nickname = params.get('player');
 	let players;
 
-   async function getPlayers() {
-      try {
-        const { data, error } = await supabase
-          .from('players')
-          .select('name, role')
-          .eq('room', roomCode)
-          .order('id');
-        
-		if (nickname == data[0].name)
-		{
-			const { data, error } = await supabase
-		  .from('rooms_id')
-		  .update({
-			status: false,
-			votes: null,    // imposta a NULL
-			results: []     // imposta a array vuoto
-		  })
-		  .eq('room_code', roomCode)  // filtra per codice stanza
-		  .select();
-		}
-        if (error) throw error;
-        return data;
-      } catch (err) {
-        console.error('Errore nel recupero dei giocatori:', err);
-        return [];
-      }
+  async function getPlayers() {
+    try {
+      const { data: players, error: error1 } = await supabase
+        .from('players')
+        .select('name, role')
+        .eq('room', roomCode)
+        .order('id');
+
+      if (error1) throw error1;
+      const { data: resetData, error: error2 } = await supabase
+        .from('rooms_id')
+        .update({
+          status: false,
+          votes: null,
+          results: []
+        })
+        .eq('room_code', roomCode)
+        .select();
+
+      if (error2) throw error2;
+      return players;
+
+    } catch (err) {
+      console.error('Errore nel recupero dei giocatori:', err);
+      return [];
     }
+  }
 
     async function displayPlayers() {
       players = await getPlayers();
